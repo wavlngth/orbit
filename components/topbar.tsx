@@ -22,7 +22,7 @@ const Topbar: NextPage = () => {
 		router.push('/login');
 	}
 	return (
-		<div className="z-10 h-12 rounded-b-xl w-screen bg-white drop-shadow flex-row flex lg:px-48 md:px-32 sm:px-20 xs:px-9 px-8 dark:bg-gray-900 ">
+		<div className="z-10 h-12 w-screen flex-row flex py-12 lg:px-48 md:px-32 sm:px-20 xs:px-9 px-8">
 			<div className="h-full flex flex-row w-full">
 
 				<div className="flex flex-row my-auto w-full">

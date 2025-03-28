@@ -1,7 +1,7 @@
 import type { pageWithLayout } from "@/layoutTypes";
 import { loginState, workspacestate } from "@/state";
 import Workspace from "@/layouts/workspace";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRecoilState } from "recoil";
 import Button from "@/components/button";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
@@ -13,9 +13,10 @@ import { withSessionSsr } from "@/lib/withSession";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { IconSend, IconPhoto, IconMoodSmile, IconX } from "@tabler/icons";
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(async ({ query, req }) => {
-
 	const posts = await prisma.wallPost.findMany({
 		where: {
 			workspaceGroupId: parseInt(query.id as string)
@@ -43,6 +44,7 @@ export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(asy
 type pageProps = {
 	posts: wallPost[]
 }
+
 const Wall: pageWithLayout<pageProps> = (props) => {
 	const router = useRouter();
 	const { id } = router.query;
@@ -52,18 +54,22 @@ const Wall: pageWithLayout<pageProps> = (props) => {
 	const [wallMessage, setWallMessage] = useState("");
 	const [posts, setPosts] = useState(props.posts);
 	const [loading, setLoading] = useState(false);
-	
+	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+	const [selectedImage, setSelectedImage] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	function sendPost(){
+	function sendPost() {
 		setLoading(true);
 		axios.post(
 			`/api/workspace/${id}/wall/post`,
 			{
-				content: wallMessage
+				content: wallMessage,
+				image: selectedImage
 			}
 		).then((req) => {
 			toast.success("Wall message posted!");
 			setWallMessage("");
+			setSelectedImage(null);
 			setPosts([req.data.post, ...posts]);
 			setLoading(false);
 		}).catch(error => {
@@ -73,33 +79,178 @@ const Wall: pageWithLayout<pageProps> = (props) => {
 		});
 	}
 
-	return <div className="pagePadding">
-		<Toaster position="bottom-center" />
-		<p className="text-4xl font-bold mb-5">Wall</p>
-		<textarea className="border border-[#AAAAAA] p-2.5 rounded-md w-full focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-primary focus-visible:outline-none placeholder-[#AAAAAA] resize-y h-16 " placeholder="Type your wall message here" onChange={(e) => setWallMessage(e.target.value)} value={wallMessage} />
-		{!!wallMessage.length && <Button classoverride="mt-2" workspace onPress={sendPost} loading={loading}>Post</Button>}
-		{posts.length < 1 && (
-			<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5 mt-3">
-				<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-				<p className="text-center text-xl font-semibold">There are no wall messages.</p>
-			</div>
-		)}
-		<div className="flex flex-col gap-2 mt-3">
-			{posts.map((post: any) => (
-				<div className="bg-white p-4 rounded-md" key={post.id}>
-					<div className="flex">
-						<img alt="avatar headshot" src={post.author.picture} className="rounded-full h-12 w-12 my-auto bg-primary" />
-						<p className="font-semibold ml-2 break-normal leading-5 my-auto">
-							{post.author.username}
-							<br />
-							<span className="text-gray-500/75 font-normal"> {moment(post.createdAt).format("DD MMM")} </span>
-						</p>
-					</div>
-					<p className="pt-2 font-medium">{post.content}</p>
+	const onEmojiClick = (emojiObject: any) => {
+		setWallMessage(prev => prev + emojiObject.emoji);
+		setShowEmojiPicker(false);
+	};
+
+	const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setSelectedImage(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+
+	const removeImage = () => {
+		setSelectedImage(null);
+		if (fileInputRef.current) {
+			fileInputRef.current.value = '';
+		}
+	};
+
+	return (
+		<div className="pagePadding">
+			<Toaster position="bottom-center" />
+			
+			{/* Header Section */}
+			<div className="flex items-center justify-between mb-8">
+				<div>
+					<h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Wall</h1>
+					<p className="text-gray-500 mt-1">Share updates and announcements with your team</p>
 				</div>
-			))}
+			</div>
+
+			{/* Post Creation Section */}
+			<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-8">
+				<div className="flex items-start gap-4">
+					<img 
+						src={login.thumbnail} 
+						alt="Your avatar" 
+						className="w-10 h-10 rounded-full bg-primary flex-shrink-0"
+					/>
+					<div className="flex-1">
+						<textarea 
+							className="w-full border-0 focus:ring-0 resize-none bg-transparent placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
+							placeholder="What's on your mind?"
+							value={wallMessage}
+							onChange={(e) => setWallMessage(e.target.value)}
+							rows={3}
+						/>
+						{selectedImage && (
+							<div className="relative mt-2">
+								<img 
+									src={selectedImage} 
+									alt="Selected" 
+									className="max-h-64 rounded-lg object-contain"
+								/>
+								<button
+									onClick={removeImage}
+									className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+								>
+									<IconX size={16} />
+								</button>
+							</div>
+						)}
+						<div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+							<div className="flex items-center gap-4">
+								<input
+									type="file"
+									ref={fileInputRef}
+									className="hidden"
+									accept="image/*"
+									onChange={handleImageSelect}
+								/>
+								<button 
+									className="p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+									onClick={() => fileInputRef.current?.click()}
+								>
+									<IconPhoto size={20} />
+								</button>
+								<div className="relative">
+									<button 
+										className="p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+										onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+									>
+										<IconMoodSmile size={20} />
+									</button>
+									{showEmojiPicker && (
+										<div className="absolute top-full left-0 mt-2 z-10">
+											<EmojiPicker 
+												onEmojiClick={onEmojiClick}
+												theme={document.documentElement.classList.contains('dark') ? Theme.DARK : Theme.LIGHT}
+												width={350}
+												height={400}
+												lazyLoadEmojis={true}
+												searchPlaceholder="Search emojis..."
+											/>
+										</div>
+									)}
+								</div>
+							</div>
+							<Button 
+								classoverride="bg-primary hover:bg-primary/90 text-white px-6" 
+								workspace 
+								onPress={sendPost} 
+								loading={loading}
+								disabled={!wallMessage.trim() && !selectedImage}
+							>
+								<IconSend size={18} className="mr-2" />
+								Post
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Posts Feed */}
+			<div className="space-y-6">
+				{posts.length < 1 ? (
+					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center">
+						<img 
+							className="mx-auto h-48 mb-4" 
+							alt="No posts yet" 
+							src="/conifer-charging-the-battery-with-a-windmill.png" 
+						/>
+						<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+						<p className="text-gray-500 dark:text-gray-400">Be the first to share something with your team!</p>
+					</div>
+				) : (
+					posts.map((post: any) => (
+						<div 
+							key={post.id} 
+							className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+						>
+							<div className="flex items-start gap-4">
+								<img 
+									alt="avatar headshot" 
+									src={post.author.picture} 
+									className="w-12 h-12 rounded-full bg-primary flex-shrink-0"
+								/>
+								<div className="flex-1">
+									<div className="flex items-center justify-between">
+										<div>
+											<h3 className="font-semibold text-gray-900 dark:text-white">
+												{post.author.username}
+											</h3>
+											<p className="text-sm text-gray-500 dark:text-gray-400">
+												{moment(post.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+											</p>
+										</div>
+									</div>
+									<p className="mt-3 text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+										{post.content}
+									</p>
+									{post.image && (
+										<div className="mt-4">
+											<img 
+												src={post.image} 
+												alt="Post image" 
+												className="max-h-96 rounded-lg object-contain"
+											/>
+										</div>
+									)}
+								</div>
+							</div>
+						</div>
+					))
+				)}
+			</div>
 		</div>
-	</div>;
+	);
 };
 
 Wall.layout = Workspace;

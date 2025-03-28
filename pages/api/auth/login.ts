@@ -18,6 +18,17 @@ type User = {
 	thumbnail: string
 }
 
+type DatabaseUser = {
+	info: {
+		passwordhash: string;
+	} | null;
+	roles: {
+		workspaceGroupId: number;
+	}[];
+}
+
+type DatabaseResponse = DatabaseUser | { error: string };
+
 type response = {
 	success: boolean
 	error?: string
@@ -33,41 +44,94 @@ export async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<response>
 ) {
-	if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
-	const id = await getRobloxUserId(req.body.username, req.headers.origin).catch(e => null) as number | undefined;
-	if (!id) return res.status(404).json({ success: false, error: 'Please enter a valid username' })
-	const user = await prisma.user.findUnique({
-		where: {
-			userid: id
-		},
-		select: {
-			info: true,
-			roles: true,
+	try {
+		if (req.method !== 'POST') {
+			return res.status(405).json({ success: false, error: 'Method not allowed' })
 		}
-	})
-	if (!user?.info?.passwordhash) return res.status(401).json({ success: false, error: 'Invalid username or password' })
-	const valid = await bcrypt.compare(req.body.password, user.info?.passwordhash)
-	if (!valid) return res.status(401).json({ success: false, error: 'Invalid username or password' })
-	req.session.userid = id
-	await req.session?.save()
 
-
-	const tovyuser: User = {
-		userId: req.session.userid,
-		username: await getUsername(req.session.userid),
-		displayname: await getDisplayName(req.session.userid),
-		thumbnail: await getThumbnail(req.session.userid)
-	}
-	let roles: any[] = [];
-	if (user?.roles.length) {
-		for (const role of user.roles) {
-			roles.push({
-				groupId: role.workspaceGroupId,
-				groupThumbnail: await noblox.getLogo(role.workspaceGroupId),
-				groupName: await noblox.getGroup(role.workspaceGroupId).then(group => group.name),
-			})
+		if (!req.body.username || !req.body.password) {
+			return res.status(400).json({ success: false, error: 'Username and password are required' })
 		}
-	}
 
-	res.status(200).json({ success: true, user: tovyuser, workspaces: roles })
+		const id = await getRobloxUserId(req.body.username, req.headers.origin).catch(e => null) as number | undefined;
+		if (!id) {
+			return res.status(404).json({ success: false, error: 'Please enter a valid username' })
+		}
+
+		const user = await prisma.user.findUnique({
+			where: {
+				userid: id
+			},
+			select: {
+				info: true,
+				roles: true,
+			}
+		}).catch(error => {
+			console.error('Database error:', error);
+			// Check for specific database connection errors
+			if (error.name === 'PrismaClientInitializationError') {
+				return { error: 'Database connection error' } as DatabaseResponse;
+			}
+			return null;
+		});
+
+		if (user && 'error' in user) {
+			return res.status(503).json({ 
+				success: false, 
+				error: 'Database service is temporarily unavailable. Please try again later.' 
+			});
+		}
+
+		if (!user) {
+			return res.status(500).json({ 
+				success: false, 
+				error: 'An error occurred while accessing the database. Please try again later.' 
+			});
+		}
+
+		if (!user.info?.passwordhash) {
+			return res.status(401).json({ success: false, error: 'Invalid username or password' })
+		}
+
+		const valid = await bcrypt.compare(req.body.password, user.info.passwordhash)
+		if (!valid) {
+			return res.status(401).json({ success: false, error: 'Invalid username or password' })
+		}
+
+		req.session.userid = id
+		await req.session?.save()
+
+		const tovyuser: User = {
+			userId: req.session.userid,
+			username: await getUsername(req.session.userid),
+			displayname: await getDisplayName(req.session.userid),
+			thumbnail: await getThumbnail(req.session.userid)
+		}
+
+		let roles: any[] = [];
+		if (user.roles.length) {
+			try {
+				for (const role of user.roles) {
+					const [logo, group] = await Promise.all([
+						noblox.getLogo(role.workspaceGroupId),
+						noblox.getGroup(role.workspaceGroupId)
+					]);
+					
+					roles.push({
+						groupId: role.workspaceGroupId,
+						groupThumbnail: logo,
+						groupName: group.name,
+					})
+				}
+			} catch (error) {
+				console.error('Error fetching group information:', error);
+				// Continue without group information rather than failing the whole request
+			}
+		}
+
+		return res.status(200).json({ success: true, user: tovyuser, workspaces: roles })
+	} catch (error) {
+		console.error('Login error:', error);
+		return res.status(500).json({ success: false, error: 'An unexpected error occurred during login' })
+	}
 }

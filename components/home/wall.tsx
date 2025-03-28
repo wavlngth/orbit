@@ -27,10 +27,13 @@ const Color: React.FC = () => {
 		router.push(`/workspace/${router.query.id}/docs/${id}`)
 	}
 
+	const goToWall = () => {
+		router.push(`/workspace/${router.query.id}/wall`)
+	}
+
 	return (
-		<div>
-			<p className="text-3xl font-medium mb-5">Latest Wall Posts</p>
-			<div className="flex flex-col gap-3 mt-5">
+		<div className="flex flex-col gap-3 mt-5">
+			<div className="flex flex-col gap-3">
 				{posts.length < 1 && (
 					<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
 						<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
@@ -48,6 +51,15 @@ const Color: React.FC = () => {
 							</p>
 						</div>
 						<p className="pt-2 font-medium">{post.content}</p>
+						{post.image && (
+							<div className="mt-3">
+								<img 
+									src={post.image} 
+									alt="Post image" 
+									className="max-h-64 rounded-lg object-contain"
+								/>
+							</div>
+						)}
 					</div>
 				))}
 			</div>

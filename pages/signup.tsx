@@ -15,7 +15,7 @@ type FormData = {
 };
 
 const SignUp: NextPage = ({ }) => {
-	const [selectedColor, setSelectedColor] = useState("bg-[#2196f3]");
+	const [selectedColor, setSelectedColor] = useState("bg-orbit");
 	const [login, setLogin] = useRecoilState(loginState);
 	const [code, setCode] = useState("");
 	const [verificationError, setVerificationError] = useState(false);
@@ -150,13 +150,13 @@ const SignUp: NextPage = ({ }) => {
 					<div className="mt-7 flex">
 						<button
 							onClick={() => setSelectedSlide(0)}
-							className="bg-[#2196F3] ml-auto py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-blue-300 transition"
+							className="bg-orbit ml-auto py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-orbit/80 transition"
 						>
 							Back
 						</button>
 						<button
 							onClick={signupform.handleSubmit(createAccount)}
-							className="ml-4 bg-[#2196F3] py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-blue-300 transition"
+							className="ml-4 bg-orbit py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-orbit/80 transition"
 						>
 							Verify
 						</button>

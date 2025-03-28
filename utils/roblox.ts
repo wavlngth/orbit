@@ -30,14 +30,22 @@ export async function getRobloxDisplayName(id: number) {
 
 // get user id
 export async function getRobloxUserId(username: string, origin?: string) {
-  const { data } = await axios.post(
-    `${origin ? (origin + "/") : "/"}api/roblox/id`,
-    {
-      keyword: username
-    }
-  );
+  console.log("we're getting the user id")
+  console.log(username)
+  console.log(origin)
+  console.log(`${origin ? (origin + "/") : "/"}api/roblox/id`)
 
-console.log(`${origin ? (origin + "/") : "/"}api/roblox/id`)
+  const data = await fetch(`${origin ? (origin + "/") : "/"}api/roblox/id`, {
+    method: "POST",
+    body: JSON.stringify({ keyword: username }),
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+    },
+  }).then(res => res.json())
 
-  return data.data[0].id;
+  console.log(`${origin ? (origin + "/") : "/"}api/roblox/id`)
+  console.log("we got the user id")
+  console.log(data)
+  return data.data[0].id
 }

@@ -7,14 +7,14 @@ import { useRecoilState } from "recoil";
 import { useState } from "react";
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { IconCheck, IconChevronDown, IconH1, IconH2, IconH3, IconH4, IconBold, IconItalic, IconListDetails} from "@tabler/icons";
+import { IconCheck, IconChevronDown, IconH1, IconH2, IconH3, IconH4, IconBold, IconItalic, IconListDetails, IconArrowLeft, IconLock } from "@tabler/icons";
 import { useRouter } from "next/router";
 import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import axios from "axios";
 import prisma from "@/utils/database";
-
 import { useForm, FormProvider } from "react-hook-form";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import clsx from 'clsx';
 
 export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(async (context) => {
 	const { id } = context.query;
@@ -35,26 +35,20 @@ export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(asy
 
 }, 'manage_docs');
 
-const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({ games, roles }) => {
+const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({ roles }) => {
 	const [login, setLogin] = useRecoilState(loginState);
-	const [selectedDate, setSelectedDate] = useState(new Date());
-	const [enabled, setEnabled] = useState(false);
-	const [days, setDays] = useState<string[]>([])
-	const form = useForm();
 	const [workspace, setWorkspace] = useRecoilState(workspacestate);
-	const [allowUnscheduled, setAllowUnscheduled] = useState(false);
-	const [selectedGame, setSelectedGame] = useState('')
-	const [selectedRoles, setSelectedRoles] = useState<string[]>([])
+	const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 	const router = useRouter();
+	const form = useForm();
 
 	const editor = useEditor({
 		extensions: [
 			StarterKit,
-			
 		],
 		editorProps: {
 			attributes: {
-				class: 'prose lg:prose-lg  max-w-full leading-normal outline outline-1 focus:outline-blue-400 mt-2 focus:ring-blue-400 focus:ring-1 focus:ring outline-gray-300 bg-white rounded-md p-5',
+				class: 'prose dark:prose-invert max-w-none focus:outline-none',
 			},
 		},
 		content: '',
@@ -87,8 +81,6 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 		}
 		setSelectedRoles(roles);
 	}
-
-	
 
 	const buttons = {
 		heading: [
@@ -124,7 +116,6 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 				function: () => editor?.chain().focus().toggleItalic().run(),
 				active: () => editor?.isActive('italic'),
 			},
-			
 		],
 		list: [
 			{
@@ -133,57 +124,123 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 				active: () => editor?.isActive('bulletList'),
 			},
 		]
-
 	}
 
-	return <div className="pagePadding">
-		<p className="text-4xl font-bold">New document</p>
-		<FormProvider {...form}>
-			<div className=" pt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2" >
-				<div className="bg-white p-4 border border-1 border-gray-300  rounded-md">
-					<p className="text-2xl font-bold">Info</p>
-					<Input {...form.register('name', { required: { value: true, message: "This field is required" } })} label="Name" />
-				</div>
-
-				<div className="bg-white p-4 border border-1 border-gray-300  rounded-md">
-					<p className="text-2xl font-bold mb-2">Permissions </p>
-					<p className="text-1xl font-bold mb-2">Viewing</p>
-					{roles.map((role: any) => (
-						<div
-							className="flex items-center"
-							key={role.id}
+	return (
+		<div className="pagePadding">
+			<div className="max-w-4xl mx-auto">
+				{/* Header */}
+				<div className="mb-8">
+					<div className="flex items-center gap-4 mb-6">
+						<button
+							onClick={goback}
+							className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
 						>
-							<input
-								type="checkbox"
-								onChange={() => toggleRole(role.id)}
-
-								className="rounded-sm mr-2 w-4 h-4 transform transition text-primary bg-slate-100 border-gray-300 hover:bg-gray-300 focus-visible:bg-gray-300 checked:hover:bg-primary/75 checked:focus-visible:bg-primary/75 focus:ring-0"
-							/>
-							<p>{role.name}</p>
-						</div>
-					))}
-				</div>
-			</div>
-		</FormProvider>
-		<div className="mt-2 rounded-md flex gap-x-2">
-			{Object.values(buttons).map((group, index) => (
-				<div className=" rounded-md overflow-clip my-auto" key={index}>
-					{group.map((button, index) => (
-						<button key={index} className={`p-2 focus:outline-none ${button.active() ? 'bg-primary/75 hover:bg-primary/50 focus-visible:bg-primary/50' : 'bg-primary hover:bg-primary/75 focus-visible:bg-primary/75'}`} onClick={button.function}>
-							<button.icon color="white" />
+							<IconArrowLeft className="w-5 h-5 text-gray-500" />
 						</button>
-					))}
+						<h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+							New Document
+						</h1>
+					</div>
+					<p className="text-gray-500">
+						Create a new document for your workspace
+					</p>
 				</div>
-			))}
-		</div>
-		<EditorContent editor={editor} />
 
-		<div className="flex mt-2">
-			<Button classoverride="ml-0" workspace onClick={() => goback()}> Back </Button>
-			<Button onPress={form.handleSubmit(createDoc)} workspace> Create </Button>
-		</div>
+				<FormProvider {...form}>
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+						{/* Document Info */}
+						<div className="lg:col-span-2">
+							<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+								<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+									Document Information
+								</h2>
+								<Input 
+									{...form.register('name', { 
+										required: { value: true, message: "Document name is required" } 
+									})} 
+									label="Document Name" 
+								/>
+							</div>
+						</div>
 
-	</div>;
+						{/* Permissions */}
+						<div className="lg:col-span-1">
+							<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+								<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+									Permissions
+								</h2>
+								<div className="space-y-3">
+									{roles.map((role: any) => (
+										<label
+											key={role.id}
+											className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+										>
+											<input
+												type="checkbox"
+												checked={selectedRoles.includes(role.id)}
+												onChange={() => toggleRole(role.id)}
+												className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+											/>
+											<span className="text-gray-700 dark:text-gray-200">
+												{role.name}
+											</span>
+										</label>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Editor Toolbar */}
+					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-6">
+						<div className="flex flex-wrap gap-2">
+							{Object.values(buttons).map((group, index) => (
+								<div key={index} className="flex gap-1">
+									{group.map((button, buttonIndex) => (
+										<button
+											key={buttonIndex}
+											onClick={button.function}
+											className={clsx(
+												'p-2 rounded-lg transition-colors',
+												button.active()
+													? 'bg-primary text-white'
+													: 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+											)}
+										>
+											<button.icon className="w-5 h-5" />
+										</button>
+									))}
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Editor Content */}
+					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+						<EditorContent editor={editor} />
+					</div>
+
+					{/* Actions */}
+					<div className="flex items-center gap-4">
+						<button
+							onClick={goback}
+							className="px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={form.handleSubmit(createDoc)}
+							className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+						>
+							<IconCheck className="w-4 h-4" />
+							Create Document
+						</button>
+					</div>
+				</FormProvider>
+			</div>
+		</div>
+	);
 };
 
 Home.layout = Workspace;

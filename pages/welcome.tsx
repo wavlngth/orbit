@@ -13,7 +13,7 @@ type FormData = {
 	verifypassword: string;
 };
 const Login: NextPage = ({ }) => {
-	const [selectedColor, setSelectedColor] = useState("bg-[#2196f3]");
+	const [selectedColor, setSelectedColor] = useState("bg-orbit");
 	const [login, setLogin] = useRecoilState(loginState);
 	const methods = useForm<{groupid: String}>();
 	const signupform = useForm<FormData>();
@@ -54,7 +54,7 @@ const Login: NextPage = ({ }) => {
 	};
 
 	const colors = [
-		"bg-[#2196f3]",
+		"bg-orbit",
 		"bg-blue-500",
 		"bg-red-500",
 		"bg-red-700",
@@ -70,13 +70,13 @@ const Login: NextPage = ({ }) => {
 	return (
 		<div className="flex bg-infobg h-screen bg-no-repeat bg-cover bg-center">
 			<p className="text-md -mt-1 text-white absolute top-4 left-4 xs:hidden md:text-6xl font-extrabold">
-				Welcome <br /> to <span className="text-[#2196f3] "> Tovy </span>
+				Welcome <br /> to <span className="text-orbit "> Orbit </span>
 			</p>
 			<Slider activeSlide={selectedSlide}>
 				<div>
 					<p className="font-bold text-2xl ">Let's get started</p>
 					<p className="text-md -mt-1 text-gray-500 dark:text-gray-200">
-						To configure your Tovy instance, we'll need some infomation
+						To configure your Orbit instance, we'll need some infomation
 					</p>
 					<FormProvider {...methods}>
 						<form className="mt-2" onSubmit={handleSubmit(nextSlide)}>
@@ -103,12 +103,12 @@ const Login: NextPage = ({ }) => {
 						</div>
 					</div>
 					<div className="flex">
-						<button className="border-[#2196F3] border-2 py-3 text-sm rounded-xl px-6 text-gray-600 dark:text-white font-bold hover:bg-blue-300 dark:hover:bg-blue-400 transition ">
+						<button className="border-orbit border-2 py-3 text-sm rounded-xl px-6 text-gray-600 dark:text-white font-bold hover:bg-orbit/80 dark:hover:bg-blue-400 transition ">
 							Documentation
 						</button>
 						<button
 							onClick={handleSubmit(nextSlide)}
-							className="ml-auto bg-[#2196F3] py-3 text-sm rounded-xl px-6  text-white font-bold hover:bg-blue-300 transition "
+							className="ml-auto bg-orbit py-3 text-sm rounded-xl px-6  text-white font-bold hover:bg-orbit/80 transition "
 						>
 							Continue
 						</button>
@@ -116,10 +116,10 @@ const Login: NextPage = ({ }) => {
 				</div>
 				<div >
 					<p className="font-bold text-2xl" id="2">
-						Make your Tovy account
+						Make your Orbit account
 					</p>
 					<p className="text-md -mt-1 text-gray-500 dark:text-gray-200">
-						You need to create a Tovy account to continue
+						You need to create a Orbit account to continue
 					</p>
 					<FormProvider {...signupform}>
 					   <Input  {...signupform.register("username")} label="Username" />
@@ -130,13 +130,13 @@ const Login: NextPage = ({ }) => {
 					<div className="mt-7 flex">
 						<button
 							onClick={() => setSelectedSlide(0)}
-							className="bg-[#2196F3] ml-auto py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-blue-300 transition"
+							className="bg-orbit ml-auto py-3 text-sm rounded-xl px-6 text-white font-bold hover:bg-orbit/80 transition"
 						>
 							Back
 						</button>
 						<button
 							onClick={signupform.handleSubmit(createAccount)}
-							className="ml-4 bg-[#2196F3] py-3 text-sm rounded-xl px-6  text-white font-bold hover:bg-blue-300 transition "
+							className="ml-4 bg-orbit py-3 text-sm rounded-xl px-6  text-white font-bold hover:bg-orbit/80 transition "
 						>
 							Continue
 						</button>

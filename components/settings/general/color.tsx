@@ -28,7 +28,7 @@ const Color: FC<props> = (props) => {
 
 
 	const colors = [
-		"bg-[#2196f3]",
+		"bg-orbit",
 		"bg-blue-500",
 		"bg-red-500",
 		"bg-red-700",

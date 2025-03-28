@@ -84,6 +84,7 @@ model role {
 model wallPost {
   id               Int       @id @default(autoincrement())
   content          String
+  image            String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   workspaceGroupId Int

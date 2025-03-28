@@ -74,7 +74,7 @@ const Home: NextPage = () => {
 	return (
 		<div>
 			<Head>
-				<title>Tovy</title>
+				<title>Orbit</title>
 			</Head>
 
 			<div className="h-screen bg-gray-100 dark:bg-gray-700">
@@ -82,7 +82,7 @@ const Home: NextPage = () => {
 				<div className="lg:px-48 md:px-32 sm:px-20 xs:px-9 px-8 ">
 					<div className=" pt-10 flex">
 						<p className="my-auto text-2xl font-bold"> Select a Workspace </p>
-						<div className="ml-auto">
+						<div className="ml-auto flex gap-2">
 							<Button  onClick={() => setIsOpen(true)}>
 								New Workspace
 							</Button>

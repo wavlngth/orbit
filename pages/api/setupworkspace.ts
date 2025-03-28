@@ -29,7 +29,12 @@ export async function handler(
 ) {
 	if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
 	let userid = await getRobloxUserId(req.body.username, req.headers.origin).catch(e => null) as number | undefined;
+
+	console.log("we got the userid in setup workspace")
+	console.log(userid);
+
 	if (!userid) {
+		console.log("we got an error in setup workspace. tf???")
 		res.status(404).json({ success: false, error: 'Username not found' })
 		return
 	};

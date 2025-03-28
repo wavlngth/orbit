@@ -11,6 +11,8 @@ import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { generateHTML } from '@tiptap/html'
+import { IconArrowLeft, IconTrash, IconClock, IconUser, IconEdit } from "@tabler/icons";
+import clsx from 'clsx';
 
 
 type Props = {
@@ -75,27 +77,71 @@ const Settings: pageWithLayout<Props> = ({ document }) => {
 	const deleteDoc = async () => {
 		await axios.post(`/api/workspace/${workspace.groupId}/guides/${document.id}/delete`, {}, {});
 		router.push(`/workspace/${workspace.groupId}/docs`);
-		
 	}
 
 	const goback = () => {
 		window.history.back();
 	}
 
-	return <div className="pagePadding">
-		<p className="text-6xl font-bold mt-3">{document.name}</p>
-		<div className="flex my-6">
-			<img src={document.owner.picture} className="bg-primary rounded-full w-12 h-12 my-auto" />
-			<p className="font-semibold pl-2 leading-5 my-auto"> Created by {document.owner.username} <br /> <span className="text-primary"> Updated {friendlyDate} </span> </p>
+	return (
+		<div className="pagePadding">
+			<div className="max-w-4xl mx-auto">
+				{/* Header */}
+				<div className="mb-8">
+					<div className="flex items-center gap-4 mb-6">
+						<button
+							onClick={goback}
+							className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+						>
+							<IconArrowLeft className="w-5 h-5 text-gray-500" />
+						</button>
+						<h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+							{document.name}
+						</h1>
+					</div>
+
+					<div className="flex items-center gap-6 text-sm text-gray-500">
+						<div className="flex items-center gap-2">
+							<IconUser className="w-4 h-4" />
+							<span>Created by {document.owner.username}</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<IconClock className="w-4 h-4" />
+							<span>Last updated {friendlyDate}</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Document Content */}
+				<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
+					<div 
+						className="prose dark:prose-invert max-w-none"
+						dangerouslySetInnerHTML={{ __html: output }} 
+					/>
+				</div>
+
+				{/* Actions */}
+				{workspace.yourPermission.includes('manage_docs') && (
+					<div className="mt-6 flex items-center gap-4">
+						<button
+							onClick={() => router.push(`/workspace/${workspace.groupId}/docs/${document.id}/edit`)}
+							className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+						>
+							<IconEdit className="w-4 h-4" />
+							Edit Document
+						</button>
+						<button
+							onClick={deleteDoc}
+							className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+						>
+							<IconTrash className="w-4 h-4" />
+							Delete Document
+						</button>
+					</div>
+				)}
+			</div>
 		</div>
-		<div className="prose max-w-full break-words mx-auto">
-			<div className="leading-normal outline outline-1 -mt-3 outline-gray-300 bg-white rounded-md py-5 p-5" dangerouslySetInnerHTML={{ __html: output }} />
-		</div>
-		<div className="flex mt-6">
-			<Button classoverride="ml-0" workspace onClick={goback}> Back </Button>
-			{workspace.yourPermission.includes('manage_docs') && <Button classoverride="bg-red-600 hover:bg-red-300 focus-visible:bg-red-300  " workspace onClick={deleteDoc}> Delete </Button>}
-		</div>
-	</div>;
+	);
 };
 
 Settings.layout = Workspace;
