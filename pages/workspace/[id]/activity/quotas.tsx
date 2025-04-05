@@ -7,7 +7,6 @@ import { useState, Fragment, useMemo } from "react";
 import randomText from "@/utils/randomText";
 import { useRecoilState } from "recoil";
 import toast, { Toaster } from 'react-hot-toast';
-import Button from "@/components/button";
 import { InferGetServerSidePropsType } from "next";
 import { withSessionSsr } from "@/lib/withSession";
 import moment from "moment";
@@ -16,20 +15,16 @@ import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import Input from "@/components/input";
 import prisma, { inactivityNotice } from "@/utils/database";
+import { IconChartBar, IconPlus, IconTrash, IconUsers, IconClipboardList } from "@tabler/icons";
 
 type Form = {
 	type: string;
 	requirement: number;
 	name: string;
-
 }
 
 export const getServerSideProps = withPermissionCheckSsr(
 	async ({ req, res, params }) => {
-
-
-
-
 		const quotas = await prisma.quota.findMany({
 			where: {
 				workspaceGroupId: parseInt(params?.id as string)
@@ -56,7 +51,8 @@ export const getServerSideProps = withPermissionCheckSsr(
 )
 
 type pageProps = InferGetServerSidePropsType<typeof getServerSideProps>
-const Notices: pageWithLayout<pageProps> = (props) => {
+
+const Quotas: pageWithLayout<pageProps> = (props) => {
 	const router = useRouter();
 	const { id } = router.query;
 	const [quotas, setQuotas] = useState<inactivityNotice[]>(props.quotas as inactivityNotice[]);
@@ -80,19 +76,18 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 	}
 
 	const onSubmit: SubmitHandler<Form> = async ({ type, requirement, name }) => {
-
 		const axiosPromise = axios.post(
 			`/api/workspace/${id}/activity/quotas/new`,
 			{ value: Number(requirement), type, roles: selectedRoles, name }
 		).then(req => {
-
+			setQuotas([...quotas, req.data.quota]);
 		});
 		toast.promise(
 			axiosPromise,
 			{
 				loading: "Creating your quota...",
 				success: () => {
-					router.reload()
+					setIsOpen(false);
 					return "Quota created!";
 				},
 				error: "Quota was not created due to an unknown error."
@@ -106,9 +101,8 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 		[key: string]: string;
 	} = {
 		'mins': 'Minutes in game',
-		'sessions_hosted': 'sessions hosted',
-		'sessions_attended': 'sessions attended',
-
+		'sessions_hosted': 'Sessions hosted',
+		'sessions_attended': 'Sessions attended',
 	}
 
 	const colors = [
@@ -128,58 +122,97 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 	return <>
 		<Toaster position="bottom-center" />
 
-		<div className="pagePadding space-y-4">
-			<p className="text-4xl font-bold">{text}</p>
-
-			<button className="cardBtn" onClick={() => setIsOpen(true)}>
-				<p className="font-bold text-2xl leading-5 mt-1">Create new quota</p>
-				<p className="text-gray-400 font-normal text-base mt-1">Quotas are a way to set requirements for your staff!.</p>
-			</button>
-
-			<p className="text-3xl font-bold !mt-8 !mb-4">Existing quotas</p>
-			{quotas.length < 1 && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">There are not quotas setup! Why don't you add one?</p>
+		<div className="pagePadding">
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
 				</div>
-			)}
-			<div className="grid gap-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-				{quotas.map((notice: any) => (
-					<div className="bg-white p-4 rounded-md ring-1 ring-gray-300" key={notice.id}>
-						<h2 className="text-lg font-semibold">
-							{notice.name}
-						</h2>
-						<p
-							className={`font-semibold`}
-						>
-							{notice.value} {types[notice.type]} per timeframe
-						</p>
-						<div className="flex flex-row space-x-2 mt-2">
-							{notice.assignedRoles.map((role: any) => (
-								<div key={role.id} className={`flex flex-row items-center space-x-1 ${getRandomColor()} py-1 px-3 rounded-full `}>
-									<p className="text-sm">{role.name}</p>
+
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconChartBar className="w-5 h-5 text-primary" />
 								</div>
-							))}
+								<div>
+									<h2 className="text-lg font-medium text-gray-900">Activity Quotas</h2>
+									<p className="text-sm text-gray-500">Set requirements for your staff</p>
+								</div>
+							</div>
+							<button
+								onClick={() => setIsOpen(true)}
+								className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+							>
+								<IconPlus className="w-4 h-4" />
+								<span className="text-sm font-medium">New Quota</span>
+							</button>
 						</div>
-						<div className="flex flex-row space-x-2 mt-2">
-							<Button classoverride="bg-red-600 hover:bg-red-300" compact onClick={() => {
-								const axiosPromise = axios.delete(`/api/workspace/${id}/activity/quotas/${notice.id}/delete`).then(req => {
-									setQuotas(quotas.filter((q: any) => q.id !== notice.id));
-								});
-								toast.promise(
-									axiosPromise,
-									{
-										loading: "Deleting your quota...",
-										success: () => {
-											return "Quota deleted!";
-										},
-										error: "Quota was not deleted due to an unknown error."
-									}
-								);
-							}}> Delete </Button>
-						</div>
+
+						{quotas.length === 0 ? (
+							<div className="text-center py-12">
+								<div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
+									<div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+										<IconClipboardList className="w-8 h-8 text-primary" />
+									</div>
+									<h3 className="text-lg font-medium text-gray-900 mb-1">No Quotas</h3>
+									<p className="text-sm text-gray-500 mb-4">You haven't set up any activity quotas yet</p>
+									<button
+										onClick={() => setIsOpen(true)}
+										className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+									>
+										<IconPlus className="w-4 h-4" />
+										<span className="text-sm font-medium">Create Quota</span>
+									</button>
+								</div>
+							</div>
+						) : (
+							<div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+								{quotas.map((quota: any) => (
+									<div key={quota.id} className="bg-gray-50 rounded-lg p-4">
+										<div className="flex items-start justify-between mb-3">
+											<div>
+												<h3 className="text-sm font-medium text-gray-900">{quota.name}</h3>
+												<p className="text-xs text-gray-500 mt-1">
+													{quota.value} {types[quota.type]} per timeframe
+												</p>
+											</div>
+											<button
+												onClick={() => {
+													const axiosPromise = axios.delete(`/api/workspace/${id}/activity/quotas/${quota.id}/delete`).then(req => {
+														setQuotas(quotas.filter((q: any) => q.id !== quota.id));
+													});
+													toast.promise(
+														axiosPromise,
+														{
+															loading: "Deleting quota...",
+															success: "Quota deleted!",
+															error: "Failed to delete quota"
+														}
+													);
+												}}
+												className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+											>
+												<IconTrash className="w-4 h-4" />
+											</button>
+										</div>
+										<div className="flex flex-wrap gap-2">
+											{quota.assignedRoles?.map((role: any) => (
+												<div 
+													key={role.id} 
+													className={`${getRandomColor()} text-white py-1 px-2 rounded-full text-xs font-medium flex items-center gap-1`}
+												>
+													<IconUsers className="w-3 h-3" />
+													{role.name}
+												</div>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
-				))}
+				</div>
 			</div>
 		</div>
 
@@ -194,7 +227,7 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 					leaveFrom="opacity-100"
 					leaveTo="opacity-0"
 				>
-					<div className="fixed inset-0 bg-black bg-opacity-25" />
+					<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 				</Transition.Child>
 
 				<div className="fixed inset-0 overflow-y-auto">
@@ -209,42 +242,81 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 							leaveTo="opacity-0 scale-95"
 						>
 							<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<Dialog.Title as="p" className="my-auto text-2xl font-bold">Create quota</Dialog.Title>
+								<Dialog.Title as="h3" className="text-lg font-medium text-gray-900 mb-4">
+									Create Activity Quota
+								</Dialog.Title>
 
 								<div className="mt-2">
 									<FormProvider {...form}>
-										<p className="text-gray-500">Assigned to</p>
-										{roles.map((role: any) => (
-											<div
-												className="flex items-center"
-												key={role.id}
-											>
-												<input
-													type="checkbox"
-													onChange={() => toggleRole(role.id)}
-
-													className="rounded-sm mr-2 w-4 h-4 transform transition text-primary bg-slate-100 border-gray-300 hover:bg-gray-300 focus-visible:bg-gray-300 checked:hover:bg-primary/75 checked:focus-visible:bg-primary/75 focus:ring-0"
-												/>
-												<p>{role.name}</p>
-											</div>
-										))}
-										<p className="text-gray-500 mt-2">Quota type</p>
 										<form onSubmit={handleSubmit(onSubmit)}>
-											<select  {...register('type')} className={"text-gray-600 dark:text-white rounded-lg p-2 mb-2 border-2 border-gray-300  dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 focus-visible:ring-tovybg focus-visible:border-tovybg"}>
-												<option value='sessions_hosted'>Sessions Hosted</option>
-												<option value='sessions_attended'>Sessions Slots Claimed</option>
-												<option value='mins'>Minutes in game</option>
-											</select>
-											<Input label="Requirement" type="number" append={watch('type') === 'mins' ? 'Miniutes in game' : 'Sessions'} {...register("requirement")} />
-											<Input label="Name" {...register("name")} />
+											<div className="space-y-4">
+												<div>
+													<label className="block text-sm font-medium text-gray-700 mb-2">
+														Assigned Roles
+													</label>
+													<div className="space-y-2">
+														{roles.map((role: any) => (
+															<label
+																key={role.id}
+																className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"
+															>
+																<input
+																	type="checkbox"
+																	onChange={() => toggleRole(role.id)}
+																	className="rounded border-gray-300 text-primary focus:ring-primary"
+																/>
+																<span className="text-sm text-gray-900">{role.name}</span>
+															</label>
+														))}
+													</div>
+												</div>
+
+												<div>
+													<label className="block text-sm font-medium text-gray-700 mb-2">
+														Quota Type
+													</label>
+													<select 
+														{...register('type')} 
+														className="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary"
+													>
+														<option value='sessions_hosted'>Sessions Hosted</option>
+														<option value='sessions_attended'>Sessions Attended</option>
+														<option value='mins'>Minutes in Game</option>
+													</select>
+												</div>
+
+												<Input 
+													label="Requirement" 
+													type="number" 
+													append={watch('type') === 'mins' ? 'Minutes' : 'Sessions'} 
+													{...register("requirement", { required: true })} 
+												/>
+												<Input 
+													label="Name" 
+													placeholder="Enter a name for this quota..."
+													{...register("name", { required: true })} 
+												/>
+											</div>
 											<input type="submit" className="hidden" />
 										</form>
 									</FormProvider>
 								</div>
 
-								<div className="mt-4 flex">
-									<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setIsOpen(false)}> Cancel </Button>
-									<Button classoverride="" onPress={handleSubmit(onSubmit)}> Submit </Button>
+								<div className="mt-6 flex gap-3">
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 transition-colors"
+										onClick={() => setIsOpen(false)}
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+										onClick={handleSubmit(onSubmit)}
+									>
+										Submit
+									</button>
 								</div>
 							</Dialog.Panel>
 						</Transition.Child>
@@ -255,6 +327,6 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 	</>;
 }
 
-Notices.layout = workspace
+Quotas.layout = workspace
 
-export default Notices
+export default Quotas

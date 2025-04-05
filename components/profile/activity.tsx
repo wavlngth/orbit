@@ -9,7 +9,7 @@ import Tooltip from "../tooltip";
 import moment from "moment";
 import { Dialog, Transition } from "@headlessui/react";
 import Button from "../button";
-import { IconMessages, IconMoon, IconPlayerPlay, IconWalk } from "@tabler/icons";
+import { IconMessages, IconMoon, IconPlayerPlay, IconWalk, IconCalendarTime, IconChartBar, IconUsers, IconClipboardList } from "@tabler/icons";
 import axios from "axios";
 import { Toaster, toast } from "react-hot-toast";
 import { useRouter } from "next/router";
@@ -74,7 +74,15 @@ const Activity: FC<Props> = ({ timeSpent, timesPlayed, data, quotas, sessionsAtt
 			},
 			scales: {
 				y: {
-					beginAtZero: true
+					beginAtZero: true,
+					grid: {
+						color: "rgba(0, 0, 0, 0.05)"
+					}
+				},
+				x: {
+					grid: {
+						color: "rgba(0, 0, 0, 0.05)"
+					}
 				}
 			}
 		})
@@ -150,99 +158,156 @@ const Activity: FC<Props> = ({ timeSpent, timesPlayed, data, quotas, sessionsAtt
 	return (
 		<>
 			<Toaster position="bottom-center" />
-			<div className="mt-2">
+			<div>
 				<div className="grid gap-4 xl:grid-cols-2">
-					<div>
-						<div className="bg-white p-4 rounded-md mb-4">
-							<p className="font-semibold text-2xl">Current week</p>
-						</div>
-						<div className="bg-white p-2 rounded-md">
-							<Line options={chartOptions} data={chartData} />
-						</div>
-						<div className="bg-white p-4 rounded-md mt-4">
-							<p className="font-semibold text-2xl">Timeline</p>
-							{!sessions.length && <p>There is no timeline for this user.</p>}
-							<ol className={`relative border-l border-gray-200 ml-3 ${sessions.length ? "mt-3" : ""}`}>
-								{timeline.map((session: any, index: number) => (
-									<div key={session.id}>
-										{"reason" in session ? (
-											<li className="mb-10 ml-6">
-												<span className="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary rounded-full ring-4 ring-white">
-													<img className="rounded-full" src={avatar} alt="timeline avatar" />
-												</span>
-												<div className="justify-between items-center p-4 bg-white rounded-lg border border-gray-200 sm:flex">
-													<time className="mb-1 text-xs font-normal text-gray-400 sm:order-last sm:mb-0">{moment(session.startTime).format("DD MMMM YYYY")} to {moment(session.endTime).format("DD MMMM YYYY")}</time>
-													<p className="text-lg font-semibold">Inactivity Notice - {session.reason}</p>
-												</div>
-											</li>
-										) : (
-											<li className="mb-10 ml-6">
-												<span className="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary rounded-full ring-4 ring-white">
-													<img className="rounded-full" src={session.user.picture ? session.user.picture : avatar} alt="timeline avatar" />
-												</span>
-												<div className="justify-between items-center p-4 bg-white rounded-lg border border-gray-200 sm:flex cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => fetchSession(session.id)}>
-													<time className="mb-1 text-xs font-normal text-gray-400 sm:order-last sm:mb-0">{moment(session.startTime).format("HH:mm")} to {moment(session.endTime).format("HH:mm")} on {moment(session.startTime).format("dddd[, ] DD MMMM YYYY")}</time>
-													<p className="text-lg font-semibold">Activity Session</p>
-												</div>
-											</li>
-										)}
-									</div>
-								))}
-							</ol>
-						</div>
-					</div>
-					<div className="grid gap-2 grid-cols-1">
-						<div>
-							<div className="bg-white p-4 rounded-md mb-4">
-								<p className="font-semibold text-2xl">Since last timeframe</p>
-							</div>
-							<div className="bg-white p-4 rounded-md">
-								<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Time spent in-game</p>
-								<p className="mt-3 text-8xl font-extralight">{timeSpent}m</p>
-							</div>
-							<div className="bg-white p-4 rounded-md mt-4">
-								<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Times played</p>
-								<p className="mt-3 text-8xl font-extralight">{timesPlayed} {timesPlayed == 1 ? 'time' : 'times'}</p>
-							</div>
-							<div className="bg-white p-4 rounded-md mt-4">
-								<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Messages sent</p>
-								<p className="mt-3 text-8xl font-extralight">{messages} {messages == 1 ? 'message' : 'msgs'}</p>
-							</div>
-							<div className="bg-white p-4 rounded-md mt-4">
-								<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Idle minutes</p>
-								<p className="mt-3 text-8xl font-extralight">{idleMins}m</p>
-							</div>
-						</div>
-
-					</div>
-
-				</div>
-
-
-
-				<div className="mt-4">
-					<div className="bg-white p-4 rounded-md mb-4">
-						<p className="font-semibold text-2xl">Quotas</p>
-						{!quotas.length && <p>There are no quotas assigned to this user.</p>}
-						<div className={`grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 ${quotas.length ? "mt-3" : "mt-0"}`}>
-							{quotas.map((notice: any) => (
-								<div className="bg-white p-4 rounded-md ring-1 ring-gray-300" key={notice.id}>
-									<h2 className="text-lg font-semibold">
-										{notice.name}
-									</h2>
-									<p
-										className={`font-semibold`}
-									>
-										{notice.value} {types[notice.type]} per timeframe
-									</p>
-									<Tooltip orientation="top" tooltipText={getQuotaProgress(notice)} isWorkspace>
-										<div className="w-full rounded-full h-6 mt-2 bg-gray-300 overflow-clip"> <div className="bg-primary h-full" style={{
-											width: `${getQuotaPercentage(notice)}%`,
-										}}></div>  </div>
-									</Tooltip>
+					<div className="space-y-4">
+						<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+							<div className="flex items-center gap-3 p-4 border-b">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconChartBar className="w-5 h-5 text-primary" />
 								</div>
-							))}
+								<h2 className="text-lg font-medium text-gray-900">Activity Chart</h2>
+							</div>
+							<div className="p-4 h-[300px]">
+								<Line options={chartOptions} data={chartData} />
+							</div>
 						</div>
+
+						<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+							<div className="flex items-center gap-3 p-4 border-b">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconCalendarTime className="w-5 h-5 text-primary" />
+								</div>
+								<h2 className="text-lg font-medium text-gray-900">Timeline</h2>
+							</div>
+							<div className="p-4">
+								{timeline.length === 0 ? (
+									<div className="text-center py-12">
+										<div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
+											<div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+												<IconClipboardList className="w-8 h-8 text-primary" />
+											</div>
+											<h3 className="text-lg font-medium text-gray-900 mb-1">No Activity</h3>
+											<p className="text-sm text-gray-500 mb-4">No activity has been recorded yet</p>
+										</div>
+									</div>
+								) : (
+									<ol className="relative border-l border-gray-200 ml-3 mt-3">
+										{timeline.map((item: any, index: number) => (
+											<div key={item.id}>
+												{"reason" in item ? (
+													<li className="mb-6 ml-6">
+														<span className="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary rounded-full ring-4 ring-white">
+															<img className="rounded-full" src={avatar} alt="timeline avatar" />
+														</span>
+														<div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+															<div className="flex justify-between items-center mb-1">
+																<p className="text-sm font-medium text-gray-900">Inactivity Notice</p>
+																<time className="text-xs text-gray-500">
+																	{moment(item.startTime).format("DD MMM")} - {moment(item.endTime).format("DD MMM YYYY")}
+																</time>
+															</div>
+															<p className="text-sm text-gray-600">{item.reason}</p>
+														</div>
+													</li>
+												) : (
+													<li className="mb-6 ml-6">
+														<span className="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary rounded-full ring-4 ring-white">
+															<img className="rounded-full" src={item.user.picture ? item.user.picture : avatar} alt="timeline avatar" />
+														</span>
+														<div 
+															onClick={() => fetchSession(item.id)}
+															className="p-4 bg-gray-50 rounded-lg border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
+														>
+															<div className="flex justify-between items-center mb-1">
+																<p className="text-sm font-medium text-gray-900">Activity Session</p>
+																<time className="text-xs text-gray-500">
+																	{moment(item.startTime).format("HH:mm")} - {moment(item.endTime).format("HH:mm")} on {moment(item.startTime).format("DD MMM YYYY")}
+																</time>
+															</div>
+														</div>
+													</li>
+												)}
+											</div>
+										))}
+									</ol>
+								)}
+							</div>
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<div className="grid grid-cols-2 gap-4">
+							<div className="bg-white rounded-xl p-5 shadow-sm">
+								<div className="flex items-center gap-3 mb-3">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<IconPlayerPlay className="w-5 h-5 text-primary" />
+									</div>
+									<p className="text-sm font-medium text-gray-600">Time Active</p>
+								</div>
+								<p className="text-3xl font-semibold text-gray-900">{timeSpent}m</p>
+							</div>
+							<div className="bg-white rounded-xl p-5 shadow-sm">
+								<div className="flex items-center gap-3 mb-3">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<IconUsers className="w-5 h-5 text-primary" />
+									</div>
+									<p className="text-sm font-medium text-gray-600">Sessions</p>
+								</div>
+								<p className="text-3xl font-semibold text-gray-900">{timesPlayed}</p>
+							</div>
+							<div className="bg-white rounded-xl p-5 shadow-sm">
+								<div className="flex items-center gap-3 mb-3">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<IconMessages className="w-5 h-5 text-primary" />
+									</div>
+									<p className="text-sm font-medium text-gray-600">Messages</p>
+								</div>
+								<p className="text-3xl font-semibold text-gray-900">{messages}</p>
+							</div>
+							<div className="bg-white rounded-xl p-5 shadow-sm">
+								<div className="flex items-center gap-3 mb-3">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<IconMoon className="w-5 h-5 text-primary" />
+									</div>
+									<p className="text-sm font-medium text-gray-600">Idle Time</p>
+								</div>
+								<p className="text-3xl font-semibold text-gray-900">{idleMins}m</p>
+							</div>
+						</div>
+
+						{quotas.length > 0 && (
+							<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+								<div className="flex items-center gap-3 p-4 border-b">
+									<div className="bg-primary/10 p-2 rounded-lg">
+										<IconChartBar className="w-5 h-5 text-primary" />
+									</div>
+									<h2 className="text-lg font-medium text-gray-900">Activity Quotas</h2>
+								</div>
+								<div className="p-4">
+									<div className="grid gap-4">
+										{quotas.map((quota: any) => (
+											<div key={quota.id} className="bg-gray-50 rounded-lg p-4">
+												<div className="flex justify-between items-center mb-2">
+													<h3 className="text-sm font-medium text-gray-900">{quota.name}</h3>
+													<p className="text-xs text-gray-500">{getQuotaProgress(quota)}</p>
+												</div>
+												<Tooltip orientation="top" tooltipText={getQuotaProgress(quota)} isWorkspace>
+													<div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+														<div 
+															className="h-full bg-primary transition-all" 
+															style={{
+																width: `${Math.min(getQuotaPercentage(quota) || 0, 100)}%`
+															}}
+														/>
+													</div>
+												</Tooltip>
+											</div>
+										))}
+									</div>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
@@ -258,7 +323,7 @@ const Activity: FC<Props> = ({ timeSpent, timesPlayed, data, quotas, sessionsAtt
 						leaveFrom="opacity-100"
 						leaveTo="opacity-0"
 					>
-						<div className="fixed inset-0 bg-black bg-opacity-25" />
+						<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 					</Transition.Child>
 
 					<div className="fixed inset-0 overflow-y-auto">
@@ -272,61 +337,50 @@ const Activity: FC<Props> = ({ timeSpent, timesPlayed, data, quotas, sessionsAtt
 								leaveFrom="opacity-100 scale-100"
 								leaveTo="opacity-0 scale-95"
 							>
-								<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white text-left align-middle shadow-xl transition-all">
-									{!loading && (
-										<>
-										 {dialogData.universe && (
-											<img className="object-cover h-[128px] w-full" draggable="false" src={dialogData?.universe?.thumbnail} alt="thumbnail" />
-										 )}
-										</>
+								<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+									<Dialog.Title as="h3" className="text-lg font-medium text-gray-900 mb-4">
+										Session Details
+									</Dialog.Title>
+									{loading ? (
+										<div className="flex items-center justify-center h-32">
+											<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+										</div>
+									) : (
+										<div>
+											{dialogData.universe && (
+												<div className="bg-gray-50 rounded-lg p-4 mb-4">
+													<h4 className="text-sm font-medium text-gray-900 mb-1">Universe</h4>
+													<p className="text-sm text-gray-600">{dialogData.universe.name}</p>
+												</div>
+											)}
+											<div className="space-y-4">
+												<div>
+													<h4 className="text-sm font-medium text-gray-900 mb-1">Duration</h4>
+													<p className="text-sm text-gray-600">
+														{moment.duration(moment(dialogData.data?.endTime).diff(moment(dialogData.data?.startTime))).humanize()}
+													</p>
+												</div>
+												<div>
+													<h4 className="text-sm font-medium text-gray-900 mb-1">Messages Sent</h4>
+													<p className="text-sm text-gray-600">{dialogData.data?.messages || 0}</p>
+												</div>
+												<div>
+													<h4 className="text-sm font-medium text-gray-900 mb-1">Idle Time</h4>
+													<p className="text-sm text-gray-600">{dialogData.data?.idleTime || 0} minutes</p>
+												</div>
+											</div>
+										</div>
 									)}
-									{loading && (
-										<div className="h-[128px] w-full bg-gray-200 animate-pulse" />
-									)}
-
-									<div className="p-4">
-										<div className="bg-white p-2 border rounded-lg border-gray-200 mb-3 text-center shadow-sm">
-											{!loading && <p className="text-lg font-bold">{dialogData?.universe?.name || 'Unknown Universe'}</p>}
-											{loading && (
-												<div className="h-3 my-2 bg-gray-200 mx-auto rounded-full dark:bg-gray-700 max-w-[360px] mb-2.5"></div>
-											)}
-										</div>
-
-										<div className="flex flex-row space-x-1">
-											<IconMoon className="my-auto p-0.5" />
-											{!loading && <p className="my-auto pl-1">Time spent idling - <strong>{Math.round(dialogData.data.idleTime)} minutes</strong></p>}
-											{loading && (
-												<div className="my-auto pl-1 h-2 w-64 rounded-full bg-gray-200"></div>
-											)}
-										</div>
-										<div className="flex flex-row space-x-1">
-											<IconWalk className="my-auto p-0.5" />
-											{!loading && <p className="my-auto pl-1">Time spent active - <strong>{Math.round(((new Date(dialogData.data.endTime).getTime() - new Date(dialogData.data.startTime).getTime()) - dialogData.data.idleTime) / 60000)} minutes</strong></p>}
-											{loading && (
-												<div className="my-auto pl-1 h-2 w-64 rounded-full bg-gray-200"></div>
-											)}
-										</div>
-										<div className="flex flex-row space-x-1">
-											<IconMessages className="my-auto p-0.5" />
-											{!loading && <p className="my-auto pl-1">Messages sent - <strong>{dialogData.data.messages ? dialogData.data.messages : "Not tracked"}</strong></p>}
-											{loading && (
-												<div className="my-auto pl-1 h-2 w-64 rounded-full bg-gray-200"></div>
-											)}
-										</div>
-										<div className="flex flex-row space-x-1">
-											<IconPlayerPlay className="my-auto p-0.5" />
-											{!loading && <p className="my-auto pl-1">Total time spent - <strong>{Math.round((new Date(dialogData.data.endTime).getTime() - new Date(dialogData.data.startTime).getTime()) / 60000)} minutes</strong></p>}
-											{loading && (
-												<div className="my-auto pl-1 h-2 w-64 rounded-full bg-gray-200"></div>
-											)}
-										</div>
-
-										<div className="mt-4 flex">
-											<Button classoverride="bg-red-500 hover:bg-red-300 ml-0 w-full" onPress={() => setIsOpen(false)}> Close </Button>
-										</div>
+									<div className="mt-6">
+										<button
+											type="button"
+											className="w-full justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 transition-colors"
+											onClick={() => setIsOpen(false)}
+										>
+											Close
+										</button>
 									</div>
 								</Dialog.Panel>
-
 							</Transition.Child>
 						</div>
 					</div>

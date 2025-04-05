@@ -13,7 +13,7 @@
 			<ProtectedString name="Source"><![CDATA[
 
 if game:GetService("RunService"):IsStudio() or game.PrivateServerId ~= "" and game.PrivateServerOwnerId ~= 0 then
-	return warn("Tovy: Your activity does not track in private servers or Studio.")
+	return warn("Orbit: Your activity does not track in private servers or Studio.")
 end
 
 -- Define services
@@ -24,9 +24,9 @@ local Players = game:GetService("Players")
 local HttpQueue = require(script.Components.HttpQueue)
 local FastWait = require(script.Components.FastWait)
 
--- Set up Tovy events
+-- Set up Orbit events
 local TovyFolder = Instance.new("Folder", ReplicatedStorage)
-TovyFolder.Name = "Tovy Assets"
+TovyFolder.Name = "Orbit Assets"
 
 local TovyEvent = Instance.new("RemoteEvent", TovyFolder)
 TovyEvent.Name = "Activity"
@@ -47,15 +47,15 @@ local Configuration = {
 	url = "<url>",
 	auth = "<apikey>",
 	-- Edit to your liking
-	bansEnabled = false, -- Set to false if you do not want Tovy to handle bans (This will use less HTTP requests)
+	bansEnabled = false, -- Set to false if you do not want Orbit to handle bans (This will use less HTTP requests)
 	cooldownPeriod = 30, -- The interval (seconds) between retrying failed HTTP requests
-	rankChecking = false, -- Enables rank checking on player join/leave to ensure only relevant data is sent to Tovy
+	rankChecking = false, -- Enables rank checking on player join/leave to ensure only relevant data is sent to Orbit
 	groupId = 3167534, -- The group ID to perform activity tracking for
-	minTrackedRank = 99,	 -- The minimum rank ID to perform activity tracking for (This value is retrieved from your Tovy instance on game launch)
+	minTrackedRank = 99,	 -- The minimum rank ID to perform activity tracking for (This value is retrieved from your Orbit instance on game launch)
 	minutesTillAFK = 2, -- How long a player can last without moving before being marked AFK
 }
 
-warn("Tovy: Module loaded; activity will be tracked.")
+warn("Orbit: Module loaded; activity will be tracked.")
 
 -- Functions
 local function isUserTracked(Player)
@@ -88,7 +88,7 @@ local function EndSession(Player)
 		local request = HttpQueue.HttpRequest.new(
 			Configuration.url .. "/api/activity/session?type=end",
 			"POST",
-			HttpService:JSONEncode({ userid = Player.UserId, idleTime = Player["Tovy AFK Timer"].Value, messages = messageTable[Player.UserId] }),
+			HttpService:JSONEncode({ userid = Player.UserId, idleTime = Player["Orbit AFK Timer"].Value, messages = messageTable[Player.UserId] }),
 			nil,
 			{
 				["Content-Type"] = "application/json",
@@ -150,7 +150,7 @@ local function InitiateTovy(Player)
 	messageTable[Player.UserId] = 0
 	if isUserTracked(Player) then
 		local TovyAFKTimer = Instance.new("NumberValue", Player)
-		TovyAFKTimer.Name = "Tovy AFK Timer"
+		TovyAFKTimer.Name = "Orbit AFK Timer"
 		TovyClient:Clone().Parent = Player:WaitForChild("PlayerGui")
 		CreateSession(Player)
 		MovementDetection(Player)
@@ -196,7 +196,7 @@ end
 
 while true do
 	for index, Player in pairs(afkTable) do
-		local t = Player["Tovy AFK Timer"]
+		local t = Player["Orbit AFK Timer"]
 		if Players:GetPlayerByUserId(Player.UserId) and t then
 			t.Value += 1
 		else 
@@ -3457,8 +3457,8 @@ return t
 ▀░░▀ ▀▀▀ ▀░▀▀ ▀▀▀ ▀░░▀ ▀▀▀░ ▄▄▄█ ▀░░ ▀░░▀ ▀░░▀ ▀▀▀
 
 Author: alreadyfans
-For: Tovy
-Description: Handles Tovy activity tracking
+For: Orbit
+Description: Handles Orbit activity tracking
 
 ]]
 

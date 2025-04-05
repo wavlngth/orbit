@@ -4,7 +4,7 @@ import Button from "@/components/button";
 import Input from "@/components/input";
 import Workspace from "@/layouts/workspace";
 import { useRecoilState } from "recoil";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { IconCheck, IconChevronDown, IconH1, IconH2, IconH3, IconH4, IconBold, IconItalic, IconListDetails, IconArrowLeft, IconLock } from "@tabler/icons";
@@ -18,30 +18,46 @@ import clsx from 'clsx';
 import { Toaster } from 'react-hot-toast';
 
 export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(async (context) => {
-	const { id } = context.query;
+	const { id, gid } = context.query;
+	if (!gid) return { notFound: true };
 
-	const roles = await prisma.role.findMany({
-		where: {
-			workspaceGroupId: Number(id),
-			isOwnerRole: false
-		},
-	});
+	const [roles, document] = await Promise.all([
+		prisma.role.findMany({
+			where: {
+				workspaceGroupId: Number(id),
+				isOwnerRole: false
+			},
+		}),
+		prisma.document.findUnique({
+			where: {
+				id: gid as string,
+			},
+			include: {
+				roles: true
+			}
+		})
+	]);
 
+	if (!document) return { notFound: true };
 
 	return {
 		props: {
-			roles
+			roles,
+			document: JSON.parse(JSON.stringify(document, (key, value) => (typeof value === 'bigint' ? value.toString() : value)))
 		},
 	};
-
 }, 'manage_docs');
 
-const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({ roles }) => {
+const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({ roles, document }) => {
 	const [login, setLogin] = useRecoilState(loginState);
 	const [workspace, setWorkspace] = useRecoilState(workspacestate);
-	const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+	const [selectedRoles, setSelectedRoles] = useState<string[]>(document.roles.map((role: any) => role.id));
 	const router = useRouter();
-	const form = useForm();
+	const form = useForm({
+		defaultValues: {
+			name: document.name
+		}
+	});
 
 	const editor = useEditor({
 		extensions: [
@@ -52,15 +68,15 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 				class: 'prose dark:prose-invert max-w-none focus:outline-none',
 			},
 		},
-		content: '',
+		content: document.content,
 	});
 
 	const goback = () => {
 		window.history.back();
 	}
 
-	const createDoc = async () => {
-		const session = await axios.post(`/api/workspace/${workspace.groupId}/guides/create`, {
+	const updateDoc = async () => {
+		const session = await axios.post(`/api/workspace/${workspace.groupId}/guides/${document.id}/update`, {
 			name: form.getValues().name,
 			content: editor?.getJSON(),
 			roles: selectedRoles
@@ -69,7 +85,7 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 		});
 		if (!session) return;
 		form.clearErrors()
-		router.push(`/workspace/${workspace.groupId}/docs/${session.data.document.id}`)
+		router.push(`/workspace/${workspace.groupId}/docs/${document.id}`)
 	}
 
 	const toggleRole = async (role: string) => {
@@ -140,8 +156,8 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 						<IconArrowLeft className="w-5 h-5" />
 					</button>
 					<div>
-						<h1 className="text-xl font-medium text-gray-900">New Document</h1>
-						<p className="text-sm text-gray-500">Create a new document for your workspace</p>
+						<h1 className="text-xl font-medium text-gray-900">Edit Document</h1>
+						<p className="text-sm text-gray-500">Update your workspace document</p>
 					</div>
 				</div>
 
@@ -228,11 +244,11 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 							Cancel
 						</button>
 						<button
-							onClick={form.handleSubmit(createDoc)}
+							onClick={form.handleSubmit(updateDoc)}
 							className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-sm rounded-md hover:bg-primary/90 transition-colors"
 						>
 							<IconCheck className="w-4 h-4" />
-							Create Document
+							Save Changes
 						</button>
 					</div>
 				</FormProvider>
@@ -243,4 +259,4 @@ const Home: pageWithLayout<InferGetServerSidePropsType<GetServerSideProps>> = ({
 
 Home.layout = Workspace;
 
-export default Home;
+export default Home; 

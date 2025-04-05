@@ -3,12 +3,12 @@ import React from "react";
 import type toast from "react-hot-toast";
 import { useRecoilState } from "recoil";
 import { workspacestate } from "@/state";
-
 import { FC } from '@/types/settingsComponent'
+import { IconCheck } from "@tabler/icons";
+import clsx from 'clsx';
 
 type props = {
 	triggerToast: typeof toast;
-
 }
 
 const Color: FC<props> = (props) => {
@@ -25,8 +25,6 @@ const Color: FC<props> = (props) => {
 		}
 	};	
 
-
-
 	const colors = [
 		"bg-orbit",
 		"bg-blue-500",
@@ -42,20 +40,29 @@ const Color: FC<props> = (props) => {
 		"bg-gray-500",
 	];
 		
-
 	return (
-		<div className="z-10 relative">
-			<p> Color </p>
-			<div className="rounded-xl grid grid-cols-5 md:grid-cols-7 lg:grid-cols-11 xl:grid-cols-12 gap-y-3 mb-2 mt-2 bg-white ">
-              {colors.map((color, i) => (
-                <a
-                  key={i}
-                  onClick={() => updateColor(color)}
-                  className={`h-12 w-12 block rounded-full transform ease-in-out ${color} ${workspace.groupTheme === color ? "border-black border-4 dark:border-white" : ""
-                    }`}
-                />
-              ))}
-            </div>
+		<div>
+			<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+				Choose a color theme for your workspace
+			</p>
+			<div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+				{colors.map((color, i) => (
+					<button
+						key={i}
+						onClick={() => updateColor(color)}
+						className={clsx(
+							'relative aspect-square rounded-lg transition-transform hover:scale-105',
+							color
+						)}
+					>
+						{workspace.groupTheme === color && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<IconCheck size={16} className="text-white" />
+							</div>
+						)}
+					</button>
+				))}
+			</div>
 		</div>
 	);
 };

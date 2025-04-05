@@ -83,9 +83,6 @@ const Login: NextPage = ({ }) => {
 						</Button>
 					</div>
 				</div>
-				<div className="w-full flex">
-					<a className="pt-4 mx-auto  text-gray-400 hover:underline cursor-pointer hover:text-blue-600 transition " href="https://tovyblox.xyz"> © Tovy 2022 </a>
-				</div>
 			</div>
 		</div>
 	);

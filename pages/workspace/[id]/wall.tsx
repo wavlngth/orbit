@@ -109,8 +109,8 @@ const Wall: pageWithLayout<pageProps> = (props) => {
 			{/* Header Section */}
 			<div className="flex items-center justify-between mb-8">
 				<div>
-					<h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Wall</h1>
-					<p className="text-gray-500 mt-1">Share updates and announcements with your team</p>
+					<h1 className="text-2xl font-medium text-gray-900 dark:text-white">Wall</h1>
+					<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Share updates and announcements with your team</p>
 				</div>
 			</div>
 

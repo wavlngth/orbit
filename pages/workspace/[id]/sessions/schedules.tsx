@@ -13,6 +13,7 @@ import prisma, { schedule, SessionType, Session, user, role } from "@/utils/data
 import { GetServerSideProps } from "next";
 import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import moment from "moment";
+import { IconArrowLeft, IconCalendarEvent, IconPlus, IconEdit, IconTrash, IconFilter } from "@tabler/icons";
 
 export const getServerSideProps: GetServerSideProps = withPermissionCheckSsr(async ({ query }) => {
 	const sessions = await prisma.schedule.findMany({
@@ -68,7 +69,8 @@ const Home: pageWithLayout<{
 	const [selectedDate, setSelectedDate] = useState(new Date());
 	const [activeSessions, setActiveSessions] = useState<esession[]>([]);
 	const [sessionsData, setSessionsData] = useState(sessions);
-	const [doingAction, setDoingAction] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [sortBy, setSortBy] = useState<'time' | 'name'>('time');
 	const text = useMemo(() => randomText(login.displayname), []);
 
 	const gradients = [
@@ -100,31 +102,40 @@ const Home: pageWithLayout<{
 		return [...lastThreeDays, ...nextThreeDays].sort((a, b) => a.getTime() - b.getTime());
 	};
 
-	const editSession = (session: any) => {
+	const editSession = async (session: esession) => {
 		router.push(`/workspace/${router.query.id}/sessions/${session.sessionType.id}/edit`);
 	};
 
-
-	const deleteSession = async (session: any) => {
-		const res = axios.post(`/api/workspace/${router.query.id}/sessions/manage/${session.sessionType.id}/delete`, {});
-		toast.promise(res, {
-			loading: 'Deleting session...',
-			success: () => {
-				setSessionsData(sessionsData.filter((s) => s.id !== session.id));
-				return 'Session deleted';
-			},
-			error: (err) => {
-				return err.response.data.message;
-			}
-		});
+	const deleteSession = async (session: esession) => {
+		try {
+			setIsLoading(true);
+			const res = await axios.post(`/api/workspace/${router.query.id}/sessions/manage/${session.sessionType.id}/delete`, {});
+			setSessionsData(sessionsData.filter((s) => s.id !== session.id));
+			toast.success('Session deleted successfully');
+		} catch (error: any) {
+			toast.error(error.response?.data?.error || 'Failed to delete session');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	useEffect(() => {
-		const activeSessions = sessionsData.filter((session: any) => {
+		const activeSessions = sessionsData.filter((session) => {
 			return session.Days.includes(selectedDate.getDay());
 		});
-		setActiveSessions(activeSessions);
-	}, [selectedDate, sessionsData]);
+
+		const sortedSessions = [...activeSessions].sort((a, b) => {
+			if (sortBy === 'time') {
+				const timeA = a.Hour * 60 + a.Minute;
+				const timeB = b.Hour * 60 + b.Minute;
+				return timeA - timeB;
+			} else {
+				return a.sessionType.name.localeCompare(b.sessionType.name);
+			}
+		});
+
+		setActiveSessions(sortedSessions);
+	}, [selectedDate, sessionsData, sortBy]);
 
 	const getDates = (dates: number[]) => {
 		if (dates.length === 7) return "Everyday";
@@ -132,65 +143,153 @@ const Home: pageWithLayout<{
 		if (dates.length === 2 && dates.includes(0) && dates.includes(6)) return "Weekends";
 		return "on " + dates.map((date) => {
 			switch (date) {
-				case 0:
-					return "Sun";
-				case 1:
-					return "Mon";
-				case 2:
-					return "Tue";
-				case 3:
-					return "Wed";
-				case 4:
-					return "Thu";
-				case 5:
-					return "Fri";
-				case 6:
-					return "Sat";
+				case 0: return "Sun";
+				case 1: return "Mon";
+				case 2: return "Tue";
+				case 3: return "Wed";
+				case 4: return "Thu";
+				case 5: return "Fri";
+				case 6: return "Sat";
+				default: return "";
 			}
-		}
-		).join(", ");
+		}).join(", ");
+	};
 
-	}
+	return (
+		<div className="min-h-screen bg-gray-50">
+			<Toaster position="bottom-center" />
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="flex items-center gap-3 mb-8">
+					<button 
+						onClick={() => router.back()}
+						className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+						aria-label="Go back"
+					>
+						<IconArrowLeft className="w-5 h-5" />
+					</button>
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+				</div>
 
+				<div className="mb-8">
+					<div className="flex items-center justify-between mb-6">
+						<div className="flex items-center gap-3">
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconCalendarEvent className="w-5 h-5 text-primary" />
+							</div>
+							<div>
+								<h2 className="text-lg font-medium text-gray-900">Session Schedules</h2>
+								<p className="text-sm text-gray-500">Manage and organize your session schedules</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-3">
+							<div className="flex items-center gap-2">
+								<label htmlFor="sort" className="text-sm text-gray-500">Sort by:</label>
+								<select
+									id="sort"
+									value={sortBy}
+									onChange={(e) => setSortBy(e.target.value as 'time' | 'name')}
+									className="text-sm border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+								>
+									<option value="time">Time</option>
+									<option value="name">Name</option>
+								</select>
+							</div>
+							<button
+								onClick={() => router.push(`/workspace/${router.query.id}/sessions/new`)}
+								className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+							>
+								<IconPlus className="w-4 h-4 mr-2" />
+								New Session Type
+							</button>
+						</div>
+					</div>
 
-	return <div className="pagePadding">
-		<p className="text-4xl font-bold">{text}</p>
-		<button onClick={() => router.push(`/workspace/${router.query.id}/sessions/new`)} className="cardBtn"><p className="font-bold text-2xl leading-5 mt-1"> New session type <br /><span className="text-gray-400 font-normal text-base "> Create a new session type   </span></p> </button>
-		<p className="text-3xl font-medium mt-5">Schedules</p>
-		<div className=" pt-5 flex flex-col lg:flex-row gap-x-3 gap-y-2">
-			{!!activeSessions.length && <div className="flex flex-col w-full gap-y-2">
-				{activeSessions.map((session) => {
-					const date = new Date(selectedDate);
-					date.setUTCMinutes(session.Minute)
-					date.setUTCHours(session.Hour)
-					return (
-						<div className="" key={session.id}>
-							<div className={`to-primary from-primary/75 bg-gradient-to-t w-full rounded-md overflow-clip text-white`}>
-								<div className="px-5 py-4 backdrop-blur flex z-10">
-									<div><p className="text-xl font-semibold"> {session.sessionType.name} </p>
-										<p className="font-medium leading-5 my-auto">{ getDates(session.Days )} at {moment(date).format(`hh:mm A`)}  </p>
-									</div>
-									<div className="ml-auto my-auto z-50">
-										<Button classoverride="my-auto ml-auto" onPress={() => editSession(session,)} loading={doingAction} > Edit  </Button>
-										<Button classoverride="hover:bg-red-300 bg-red-600 focus-visible:bg-red-300 ml-2" onPress={() => deleteSession(session)} loading={doingAction} > Delete  </Button>
-									</div>
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+						{/* Date Selection */}
+						<div className="lg:col-span-3">
+							<div className="bg-white rounded-lg shadow">
+								<div className="p-4 border-b border-gray-200">
+									<h3 className="text-sm font-medium text-gray-900">Select Date</h3>
+								</div>
+								<div className="p-4 space-y-2">
+									{getLastThreeDays().map((day, i) => (
+										<button
+											key={i}
+											onClick={() => setSelectedDate(day)}
+											className={`w-full px-4 py-3 rounded-lg text-left transition-colors ${
+												selectedDate.getDate() === day.getDate()
+													? 'bg-primary/10 text-primary'
+													: 'hover:bg-gray-50 text-gray-700'
+											}`}
+										>
+											<div className="font-medium">{day.toLocaleDateString("en-US", { weekday: "long" })}</div>
+											<div className="text-sm opacity-75">{day.toLocaleDateString()}</div>
+										</button>
+									))}
 								</div>
 							</div>
 						</div>
-					)
-				})}
-			</div>}
-			{!activeSessions.length && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">No session schedules found.</p>
+
+						{/* Sessions List */}
+						<div className="lg:col-span-9">
+							{activeSessions.length > 0 ? (
+								<div className="space-y-4">
+									{activeSessions.map((session) => {
+										const date = new Date(selectedDate);
+										date.setUTCMinutes(session.Minute);
+										date.setUTCHours(session.Hour);
+										
+										return (
+											<div key={session.id} className="bg-white rounded-lg shadow-sm hover:shadow transition-shadow">
+												<div className="p-6">
+													<div className="flex items-center justify-between">
+														<div>
+															<h3 className="text-lg font-medium text-gray-900">
+																{session.sessionType.name}
+															</h3>
+															<p className="text-sm text-gray-500">
+																{getDates(session.Days)} at {moment(date).format('hh:mm A')}
+															</p>
+														</div>
+														<div className="flex items-center gap-2">
+															<button
+																onClick={() => editSession(session)}
+																disabled={isLoading}
+																className="p-2 text-gray-500 hover:text-primary rounded-lg hover:bg-gray-100 transition-colors"
+																aria-label="Edit session"
+															>
+																<IconEdit className="w-5 h-5" />
+															</button>
+															<button
+																onClick={() => deleteSession(session)}
+																disabled={isLoading}
+																className="p-2 text-red-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+																aria-label="Delete session"
+															>
+																<IconTrash className="w-5 h-5" />
+															</button>
+														</div>
+													</div>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<div className="bg-white rounded-lg shadow-sm p-8 text-center">
+									<div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+										<IconCalendarEvent className="w-6 h-6 text-primary" />
+									</div>
+									<h3 className="text-sm font-medium text-gray-900 mb-1">No Sessions Scheduled</h3>
+									<p className="text-sm text-gray-500">There are no sessions scheduled for this date.</p>
+								</div>
+							)}
+						</div>
+					</div>
 				</div>
-			)}
-			<Toaster />
-
+			</div>
 		</div>
-
-	</div>;
+	);
 };
 
 Home.layout = Workspace;

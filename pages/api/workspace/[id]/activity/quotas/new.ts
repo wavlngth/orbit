@@ -33,6 +33,9 @@ export async function handler(
 				assignedRoles: {
 					connect: roles.map((role: number) => ({ id: role }))
 				}
+			},
+			include: {
+				assignedRoles: true
 			}
 		});
 

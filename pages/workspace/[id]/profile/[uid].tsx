@@ -13,6 +13,9 @@ import prisma from "@/utils/database";
 import moment from "moment";
 import { InferGetServerSidePropsType } from "next";
 import { useRecoilState } from "recoil";
+import { IconUserCircle, IconHistory, IconBell, IconBook } from "@tabler/icons";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 export const getServerSideProps = withPermissionCheckSsr(
 	async ({ query, req }) => {
@@ -31,7 +34,11 @@ export const getServerSideProps = withPermissionCheckSsr(
 				}
 			}
 		});
-		if (!parseInt(query?.id as string) && !userTakingAction?.roles[0].isOwnerRole && !userTakingAction?.roles[0].permissions.includes('manage_activity')) return { notFound: true };
+
+		if (!userTakingAction) return { notFound: true };
+
+		if (!parseInt(query?.id as string) && !userTakingAction?.roles[0]?.isOwnerRole && !userTakingAction?.roles[0]?.permissions?.includes('manage_activity')) return { notFound: true };
+		
 		const notices = await prisma.inactivityNotice.findMany({
 			where: {
 				userId: BigInt(query?.uid as string),
@@ -46,7 +53,7 @@ export const getServerSideProps = withPermissionCheckSsr(
 
 		const sessions = await prisma.activitySession.findMany({
 			where: {
-				userId: BigInt(parseInt(query?.uid as string)),
+				userId: BigInt(query?.uid as string),
 				active: false
 			},
 			include: {
@@ -180,11 +187,11 @@ export const getServerSideProps = withPermissionCheckSsr(
 				data,
 				sessions: (JSON.parse(JSON.stringify(sessions, (_key, value) => (typeof value === 'bigint' ? value.toString() : value))) as typeof sessions),
 				info: {
-					username: await getUsername(parseInt(query?.uid as string)),
-					displayName: await getDisplayName(parseInt(query?.uid as string)),
-					avatar: await getThumbnail(parseInt(query?.uid as string))
+					username: await getUsername(Number(query?.uid as string)),
+					displayName: await getDisplayName(Number(query?.uid as string)),
+					avatar: await getThumbnail(Number(query?.uid as string))
 				},
-				isUser: req.session.userid === parseInt(query?.uid as string),
+				isUser: req.session.userid === Number(query?.uid as string),
 				sesisonsHosted: sesisonsHosted.length,
 				sessionsAttended: sessionsAttended.length,
 				quotas: userTakingAction?.roles[0].assignedQuotas,
@@ -215,55 +222,100 @@ type pageProps = {
 	sessionsAttended: number;
 	isUser: boolean;
 }
-const Profile: pageWithLayout<pageProps> = ({ notices, timeSpent, timesPlayed, data, sessions, userBook, isUser, info, sesisonsHosted, sessionsAttended, quotas }) => {
-	const [login, setLogin] = useRecoilState(loginState)
+const Profile: pageWithLayout<pageProps> = ({ notices, timeSpent, timesPlayed, data, sessions, userBook: initialUserBook, isUser, info, sesisonsHosted, sessionsAttended, quotas }) => {
+	const [login, setLogin] = useRecoilState(loginState);
+	const [userBook, setUserBook] = useState(initialUserBook);
+	const router = useRouter();
+
+	const refetchUserBook = async () => {
+		try {
+			const response = await fetch(`/api/workspace/${router.query.id}/userbook/${router.query.uid}`);
+			const data = await response.json();
+			setUserBook(data.userBook);
+		} catch (error) {
+			console.error("Error refetching userbook:", error);
+		}
+	};
 
 	return <div className="pagePadding">
-		<div className="flex items-center mb-6">
-			<img src={info.avatar} className="rounded-full bg-primary h-16 w-16 my-auto" alt="Avatar Headshot" />
-			<div className="ml-3">
-				<h2 className="text-4xl font-bold">{info.displayName}</h2>
-				<p className="text-gray-500">@{info.username}</p>
+		<div className="max-w-7xl mx-auto">
+			<div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+				<div className="flex items-center gap-4">
+					<div className="relative">
+						<img 
+							src={info.avatar} 
+							className="rounded-xl bg-primary h-20 w-20 object-cover" 
+							alt={`${info.displayName}'s avatar`} 
+						/>
+						<div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
+							<IconUserCircle className="w-4 h-4 text-white" />
+						</div>
+					</div>
+					<div>
+						<h1 className="text-2xl font-medium text-gray-900">{info.displayName}</h1>
+						<p className="text-sm text-gray-500">@{info.username}</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+				<Tab.Group>
+					<Tab.List className="flex p-1 gap-1 bg-gray-50 border-b">
+						<Tab className={({ selected }) =>
+							`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+								selected 
+									? "bg-white text-primary shadow-sm" 
+									: "text-gray-600 hover:bg-white/50 hover:text-gray-900"
+							}`
+						}>
+							<IconHistory className="w-4 h-4" />
+							Activity
+						</Tab>
+						<Tab className={({ selected }) =>
+							`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+								selected 
+									? "bg-white text-primary shadow-sm" 
+									: "text-gray-600 hover:bg-white/50 hover:text-gray-900"
+							}`
+						}>
+							<IconBook className="w-4 h-4" />
+							Userbook
+						</Tab>
+						<Tab className={({ selected }) =>
+							`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+								selected 
+									? "bg-white text-primary shadow-sm" 
+									: "text-gray-600 hover:bg-white/50 hover:text-gray-900"
+							}`
+						}>
+							<IconBell className="w-4 h-4" />
+							Notices
+						</Tab>
+					</Tab.List>
+					<Tab.Panels className="p-6">
+						<Tab.Panel>
+							<Activity
+								timeSpent={timeSpent}
+								timesPlayed={timesPlayed}
+								data={data}
+								quotas={quotas}
+								sessionsHosted={sesisonsHosted}
+								sessionsAttended={sessionsAttended}
+								avatar={info.avatar}
+								sessions={sessions}
+								notices={notices}
+							/>
+						</Tab.Panel>
+						<Tab.Panel>
+							<Book userBook={userBook} onRefetch={refetchUserBook} />
+						</Tab.Panel>
+						<Tab.Panel>
+							<Notices notices={notices} />
+						</Tab.Panel>
+					</Tab.Panels>
+				</Tab.Group>
 			</div>
 		</div>
-		{!isUser && <Tab.Group>
-			<Tab.List className="flex py-1 space-x-4">
-			<Tab className={({ selected }) =>
-					`w-1/3 text-lg rounded-lg border-[#AAAAAA] border leading-5 font-medium text-left p-3 px-2 transition ${selected ? "bg-gray-200 hover:bg-gray-300" : "  hover:bg-gray-300"
-					}`
-				}>
-					Activity
-				</Tab>
-				<Tab className={({ selected }) =>
-					`w-1/3 text-lg rounded-lg border-[#AAAAAA] border leading-5 font-medium text-left p-3 px-2 transition ${selected ? "bg-gray-200 hover:bg-gray-300" : "  hover:bg-gray-300"
-					}`
-				}>
-					Userbook
-				</Tab>
-				<Tab className={({ selected }) =>
-					`w-1/3 text-lg rounded-lg border-[#AAAAAA] border leading-5 font-medium text-left p-3 px-2 transition ${selected ? "bg-gray-200 hover:bg-gray-300" : "  hover:bg-gray-300"
-					}`
-				}>
-					Notices
-				</Tab>
-			</Tab.List>
-			
-			<Tab.Panels>
-				<Tab.Panel>
-					<Activity timeSpent={timeSpent} timesPlayed={timesPlayed} data={data} sessionsAttended={sessionsAttended} sessionsHosted={sesisonsHosted} quotas={quotas} avatar={info.avatar} sessions={sessions} notices={notices} />
-				</Tab.Panel>
-				<Tab.Panel>
-					<Book userBook={userBook} />
-				</Tab.Panel>
-				<Tab.Panel>
-					<Notices notices={notices} />
-				</Tab.Panel>
-			</Tab.Panels>
-		</Tab.Group>}
-		{
-			isUser && <Activity timeSpent={timeSpent} timesPlayed={timesPlayed} data={data} quotas={quotas} sessionsAttended={sessionsAttended} sessionsHosted={sesisonsHosted} avatar={info.avatar} sessions={sessions} notices={notices} />
-		}
-		
 	</div>;
 }
 

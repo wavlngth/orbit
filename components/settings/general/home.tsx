@@ -3,24 +3,22 @@ import React from "react";
 import type toast from "react-hot-toast";
 import { useRecoilState } from "recoil";
 import { workspacestate } from "@/state";
-
 import { FC } from '@/types/settingsComponent'
-import Button from "@/components/button";
+import { IconCheck } from "@tabler/icons";
+import clsx from 'clsx';
 
 type props = {
 	triggerToast: typeof toast;
-
 }
 
 const Color: FC<props> = (props) => {
 	const triggerToast = props.triggerToast;
 	const [workspace, setWorkspace] = useRecoilState(workspacestate);
-	const [selected, setSelected] = React.useState<string[]>([]);
 
 	const updateHome = async () => {
 		const res = await axios.patch(`/api/workspace/${workspace.groupId}/settings/general/home`, { 
 			widgets: workspace.settings.widgets,
-		 });
+		});
 		if (res.status === 200) {
 			triggerToast.success("Updated home");
 		} else {
@@ -43,22 +41,63 @@ const Color: FC<props> = (props) => {
 			setWorkspace({ ...workspace, settings: { ...workspace.settings, widgets: [...workspace.settings.widgets, toggleAble[name]] } });
 		}
 	}
-		
-
 
 	return (
 		<div>
-			<p> Allows you to Customize whats on your workspace home page (tiles will only be shown to people with the corrosponding permission) </p>
-			<div className="">
-				<div className="grid grid-cols-3 gap-y-3 gap-x-3 mt-2">
-					{Object.keys(toggleAble).map((key, i) => (
-						<button key={i} className={`flex flex-col bg-white rounded-md  outline-[1.4px] outline text-left px-3 py-2 hover:bg-gray-100 focus-visible:bg-gray-100 ${workspace.settings.widgets.includes(toggleAble[key]) ? 'ring-primary outline-0 ring ' : ' outline-gray-300'}`} onClick={() => toggle(key)}>
-							<p className="text-2xl font-semibold">{key}</p>
-						</button>
-					))}
-				</div>
-				<Button classoverride="mt-4" onPress={() => updateHome()}> Save </Button>
-
+			<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+				Customize what appears on your workspace home page. Tiles will only be shown to users with the corresponding permissions.
+			</p>
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+				{Object.keys(toggleAble).map((key, i) => (
+					<button 
+						key={i} 
+						onClick={() => toggle(key)}
+						className={clsx(
+							'flex items-center justify-between p-3 rounded-lg border transition-colors',
+							workspace.settings.widgets.includes(toggleAble[key])
+								? 'border-primary bg-primary/5 text-primary'
+								: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+						)}
+					>
+						<span className="text-sm font-medium">{key}</span>
+						{workspace.settings.widgets.includes(toggleAble[key]) && (
+							<IconCheck size={16} className="flex-shrink-0" />
+						)}
+					</button>
+				))}
+			</div>
+			<div className="mt-4">
+				<button 
+					onClick={updateHome}
+					className={clsx(
+						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+						workspace.groupTheme === "bg-orbit" 
+							? "bg-orbit text-white hover:bg-orbit/90" 
+							: workspace.groupTheme === "bg-blue-500"
+								? "bg-blue-500 text-white hover:bg-blue-600"
+								: workspace.groupTheme === "bg-red-500"
+									? "bg-red-500 text-white hover:bg-red-600"
+									: workspace.groupTheme === "bg-red-700"
+										? "bg-red-700 text-white hover:bg-red-800"
+										: workspace.groupTheme === "bg-green-500"
+											? "bg-green-500 text-white hover:bg-green-600"
+											: workspace.groupTheme === "bg-green-600"
+												? "bg-green-600 text-white hover:bg-green-700"
+												: workspace.groupTheme === "bg-yellow-500"
+													? "bg-yellow-500 text-white hover:bg-yellow-600"
+													: workspace.groupTheme === "bg-orange-500"
+														? "bg-orange-500 text-white hover:bg-orange-600"
+														: workspace.groupTheme === "bg-purple-500"
+															? "bg-purple-500 text-white hover:bg-purple-600"
+															: workspace.groupTheme === "bg-pink-500"
+																? "bg-pink-500 text-white hover:bg-pink-600"
+																: workspace.groupTheme === "bg-black"
+																	? "bg-black text-white hover:bg-gray-900"
+																	: "bg-gray-500 text-white hover:bg-gray-600"
+					)}
+				>
+					Save Changes
+				</button>
 			</div>
 		</div>
 	);

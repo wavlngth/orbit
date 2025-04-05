@@ -21,21 +21,24 @@ export function withPermissionCheck(
 		if (!req.query.id) return res.status(400).json({ success: false, error: 'Missing required fields' });
 		const workspaceId = parseInt(req.query.id as string);
 
-
 		const user = await prisma.user.findFirst({
 			where: {
 				userid: BigInt(uid)
 			},
 			include: {
-				roles: true
+				roles: {
+					where: {
+						workspaceGroupId: workspaceId
+					}
+				}
 			}
 		});
 		if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' });
-		const userrole = user.roles.find(role => role.workspaceGroupId === workspaceId);
+		const userrole = user.roles[0];
 		if (!userrole) return res.status(401).json({ success: false, error: 'Unauthorized' });
 		if (userrole.isOwnerRole) return handler(req, res);
 		if (!permission) return handler(req, res);
-		if (userrole.permissions.includes(permission)) return handler(req, res);
+		if (userrole.permissions?.includes(permission)) return handler(req, res);
 		return res.status(401).json({ success: false, error: 'Unauthorized' });
 	})
 }
@@ -50,47 +53,53 @@ export function withPermissionCheckSsr(
 		if (!uid) return {
 			redirect: {
 				destination: '/',
+				permanent: false
 			}
 		}
 		if (!query.id) return {
 			redirect: {
 				destination: '/',
+				permanent: false
 			}
 		};
 		const workspaceId = parseInt(query.id as string);
-
 
 		const user = await prisma.user.findFirst({
 			where: {
 				userid: BigInt(uid)
 			},
 			include: {
-				roles: true
+				roles: {
+					where: {
+						workspaceGroupId: workspaceId
+					}
+				}
 			}
 		});
 		if (!user) return {
 			redirect: {
 				destination: '/',
+				permanent: false
 			}
 		}
-		const userrole = user.roles.find(role => role.workspaceGroupId === workspaceId);
+		const userrole = user.roles[0];
 		if (!userrole) return {
 			redirect: {
 				destination: '/',
+				permanent: false
 			}
 		};
 		if (userrole.isOwnerRole) return handler(context);
 		if (!permission) return handler(context);
-		if (userrole.permissions.includes(permission)) return handler(context);
+		if (userrole.permissions?.includes(permission)) return handler(context);
 		return {
 			redirect: {
 				destination: '/',
+				permanent: false
 			}
 		}
 	})
 }
-
-
 
 export async function checkGroupRoles(groupID: number) {
 	const rss = await noblox.getRoles(groupID).catch(() => null);

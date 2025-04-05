@@ -50,10 +50,10 @@ const Home: pageWithLayout = () => {
 			<div className="max-w-7xl mx-auto">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+					<h1 className="text-2xl font-medium text-gray-900 dark:text-white">
 						Welcome back, {login.displayname}
 					</h1>
-					<p className="text-gray-500 mt-1">
+					<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
 						Here's what's happening in your workspace
 					</p>
 				</div>
@@ -81,7 +81,7 @@ const Home: pageWithLayout = () => {
 												<h2 className="text-lg font-semibold text-gray-900 dark:text-white">
 													{widgetConfig.title}
 												</h2>
-												<p className="text-sm text-gray-500">
+												<p className="text-sm text-gray-500 dark:text-gray-400">
 													{widgetConfig.description}
 												</p>
 											</div>
@@ -104,7 +104,7 @@ const Home: pageWithLayout = () => {
 						<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
 							Your dashboard is empty
 						</h3>
-						<p className="text-gray-500 mb-6">
+						<p className="text-gray-500 dark:text-gray-400 mb-6">
 							Add widgets to your workspace to get started
 						</p>
 						<button

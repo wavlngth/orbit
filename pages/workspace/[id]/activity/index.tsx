@@ -8,7 +8,7 @@ import { useRecoilState } from "recoil";
 import Button from "@/components/button";
 import { Dialog, Transition } from "@headlessui/react";
 import moment from "moment";
-import { IconChevronRight } from "@tabler/icons";
+import { IconChevronRight, IconUsers, IconClock, IconChartBar, IconUserCircle, IconMessageCircle2 } from "@tabler/icons";
 import Tooltip from "@/components/tooltip";
 import randomText from "@/utils/randomText";
 import toast, { Toaster } from 'react-hot-toast';
@@ -70,101 +70,207 @@ const Activity: pageWithLayout = () => {
 
 	return <>
 		<div className="pagePadding">
-			<p className="text-4xl font-bold">{text}</p>
-
-			<p className="text-3xl font-bold !mt-8 !mb-4">Activity</p>
-
-			<div className="grid gap-2 lg:grid-cols-2 grid-rows-1 my-2">
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-bold text-2xl leading-4 mt-1">Messages sent</p>
-					<p className="mt-3 text-6xl font-extralight">{messages}</p>
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
 				</div>
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-bold text-2xl leading-4 mt-1">Time spent idling</p>
-					<p className="mt-3 text-6xl font-extralight">{Math.round(idleTime)}m</p>
-				</div>
-			</div>
 
-			<div className="bg-white p-4 rounded-md">
-				<p className="font-bold text-2xl leading-4 mt-1">In-game</p>
-				<p className="text-gray-500 text-xl mt-2 mb-1">Staff which are in-game</p>
-				<div className="flex flex-row gap-2 flex-wrap">
-					{activeUsers.map((user: any) => (
-						<Tooltip key={user.userId} tooltipText={`${user.username} (${user.userId})`} orientation="top">
-							<img
-								src={user.picture}
-								alt="User thumbnail"
-								className="rounded-full w-10 h-10 bg-primary"
-							/>
-						</Tooltip>
-					))}
-				</div>
-				{activeUsers.length === 0 && <p className="text-gray-700">No staff are in-game</p>}
-			</div>
+				<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+					<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+						<div className="flex items-center gap-3 mb-2">
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconMessageCircle2 className="w-5 h-5 text-primary" />
+							</div>
+							<p className="text-sm font-medium text-gray-600">Messages</p>
+						</div>
+						<p className="text-3xl font-semibold text-gray-900">{messages}</p>
+					</div>
 
-			<div className="grid gap-2 lg:grid-cols-2 grid-rows-1 mt-2">
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-bold text-2xl leading-4 mt-1">Top staff</p>
-					<p className="text-gray-500 text-xl mt-2">Leading members of the staff team in activity</p>
-					<div className="flex gap-2">
+					<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+						<div className="flex items-center gap-3 mb-2">
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconClock className="w-5 h-5 text-primary" />
+							</div>
+							<p className="text-sm font-medium text-gray-600">Idle Time</p>
+						</div>
+						<p className="text-3xl font-semibold text-gray-900">{Math.round(idleTime)}m</p>
+					</div>
+
+					<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+						<div className="flex items-center gap-3 mb-2">
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconUsers className="w-5 h-5 text-primary" />
+							</div>
+							<p className="text-sm font-medium text-gray-600">Active Staff</p>
+						</div>
+						<p className="text-3xl font-semibold text-gray-900">{activeUsers.length}</p>
+					</div>
+				</div>
+
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+					<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+						<div className="flex items-center justify-between mb-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconUsers className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-base font-medium text-gray-900">In-game Staff</h2>
+									<p className="text-sm text-gray-500">Currently active members</p>
+								</div>
+							</div>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{activeUsers.map((user: any) => (
+								<Tooltip key={user.userId} tooltipText={`${user.username} (${user.userId})`} orientation="top">
+									<div className="relative group">
+										<img
+											src={user.picture}
+											alt={user.username}
+											className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
+										/>
+										<div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />
+									</div>
+								</Tooltip>
+							))}
+							{activeUsers.length === 0 && (
+								<p className="text-sm text-gray-500 italic">No staff are currently in-game</p>
+							)}
+						</div>
+					</div>
+
+					<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+						<div className="flex items-center justify-between mb-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconUserCircle className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-base font-medium text-gray-900">Inactive Staff</h2>
+									<p className="text-sm text-gray-500">Staff on inactivity notice</p>
+								</div>
+							</div>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{inactiveUsers.map((user: any) => (
+								<Tooltip key={user.userId} tooltipText={`${user.username} (${user.userId}) | ${moment(user.from).format("DD MMM")} - ${moment(user.to).format("DD MMM")} for ${user.reason}`} orientation="bottom">
+									<div className="relative group">
+										<img
+											src={user.picture}
+											alt={user.username}
+											className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all opacity-60"
+										/>
+									</div>
+								</Tooltip>
+							))}
+							{inactiveUsers.length === 0 && (
+								<p className="text-sm text-gray-500 italic">No staff are currently inactive</p>
+							)}
+						</div>
+					</div>
+				</div>
+
+				<div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all mb-6">
+					<div className="flex items-center justify-between mb-4">
+						<div className="flex items-center gap-3">
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconChartBar className="w-5 h-5 text-primary" />
+							</div>
+							<div>
+								<h2 className="text-base font-medium text-gray-900">Top Staff</h2>
+								<p className="text-sm text-gray-500">Leading members by activity</p>
+							</div>
+						</div>
+					</div>
+					<div className="flex flex-wrap gap-2">
 						{topStaff.slice(0, 5).map((user: any) => (
 							<Tooltip key={user.userId} tooltipText={`${user.username} (${user.userId}) - ${Math.floor(user.ms / 1000 / 60)} minutes`} orientation="bottom">
-								<img
-									src={user.picture}
-									alt="User thumbnail"
-									className="rounded-full w-10 h-10 bg-primary"
-								/>
+								<div className="relative group">
+									<img
+										src={user.picture}
+										alt={user.username}
+										className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
+									/>
+								</div>
 							</Tooltip>
 						))}
+						{topStaff.length === 0 && (
+							<p className="text-sm text-gray-500 italic">No staff have been active yet</p>
+						)}
 					</div>
-					{topStaff.length === 0 && <p className="text-gray-700">No staff have been active yet</p>}
 				</div>
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-bold text-2xl leading-4 mt-1">Inactive right now</p>
-					<p className="text-gray-500 text-xl mt-2">Staff which are on an active inactivity notice</p>
-					<div className="flex gap-2">
-						{inactiveUsers.map((user: any) => (
-							<Tooltip key={user.userId} tooltipText={`${user.username} (${user.userId}) | ${moment(user.from).format("DD MMM")} - ${moment(user.to).format("DD MMM")} for ${user.reason} `} orientation="bottom">
-								<img
-									src={user.picture}
-									alt="User thumbnail"
-									className="rounded-full w-10 h-10 bg-primary"
-								/>
-							</Tooltip>
-						))}
-					</div>
-					{inactiveUsers.length === 0 && <p className="text-gray-700">No staff are inactive right now</p>}
-				</div>
-			</div>
 
-			<p className="text-3xl font-bold !mt-8 !mb-2">Manage</p>
-			<div className="grid gap-y-1 gap-x-3 lg:grid-cols-2 3xl:grid-cols-4 2xl:grid-cols-3 md:grid-cols-2 grid-rows-1">
-				{workspace.yourPermission.includes('manage_activity') && <div className="cardBtn" onClick={() => router.push(`/workspace/${id}/notices/pending`)}>
-					<div className="flex flex-row">
-						<div className="flex flex-col">
-							<p className="font-bold text-2xl leading-6 mt-1">View notices</p>
-							<p className="text-gray-500 text-xl mt-2">View all the pending inactivity notices</p>
+				<div className="mb-4">
+					<h2 className="text-base font-medium text-gray-900">Quick Actions</h2>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+					{workspace.yourPermission.includes('manage_activity') && (
+						<button 
+							onClick={() => router.push(`/workspace/${id}/notices/pending`)}
+							className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+						>
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconUsers className="w-5 h-5 text-primary" />
+							</div>
+							<div>
+								<p className="text-sm font-medium text-gray-900">View Notices</p>
+								<p className="text-xs text-gray-500">Review pending notices</p>
+							</div>
+						</button>
+					)}
+					<button 
+						onClick={() => router.push(`/workspace/${id}/profile/${login.userId}`)}
+						className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+					>
+						<div className="bg-primary/10 p-2 rounded-lg">
+							<IconUserCircle className="w-5 h-5 text-primary" />
 						</div>
-
-
-					</div>
-				</div>}
-				<div className="cardBtn cursor-pointer" onClick={() => router.push(`/workspace/${id}/profile/${login.userId}`)}>
-					<p className="font-bold text-2xl leading-6 mt-1">View my profile</p>
-					<p className="text-gray-500 text-xl mt-2">View your profile on this workspace</p>
+						<div>
+							<p className="text-sm font-medium text-gray-900">My Profile</p>
+							<p className="text-xs text-gray-500">View your profile</p>
+						</div>
+					</button>
+					<button 
+						onClick={() => router.push(`/workspace/${id}/notices`)}
+						className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+					>
+						<div className="bg-primary/10 p-2 rounded-lg">
+							<IconClock className="w-5 h-5 text-primary" />
+						</div>
+						<div>
+							<p className="text-sm font-medium text-gray-900">My Notices</p>
+							<p className="text-xs text-gray-500">View your notices</p>
+						</div>
+					</button>
+					{workspace.yourPermission.includes('manage_activity') && (
+						<button 
+							onClick={() => setIsOpen(true)}
+							className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+						>
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconChartBar className="w-5 h-5 text-primary" />
+							</div>
+							<div>
+								<p className="text-sm font-medium text-gray-900">New Timeframe</p>
+								<p className="text-xs text-gray-500">Reset activity period</p>
+							</div>
+						</button>
+					)}
+					{workspace.yourPermission.includes('admin') && (
+						<button 
+							onClick={() => router.push(`/workspace/${id}/activity/quotas`)}
+							className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+						>
+							<div className="bg-primary/10 p-2 rounded-lg">
+								<IconChartBar className="w-5 h-5 text-primary" />
+							</div>
+							<div>
+								<p className="text-sm font-medium text-gray-900">Manage Quotas</p>
+								<p className="text-xs text-gray-500">Configure quotas</p>
+							</div>
+						</button>
+					)}
 				</div>
-				<div className="cardBtn" onClick={() => router.push(`/workspace/${id}/notices`)}>
-					<p className="font-bold text-2xl leading-6 mt-1">View my notices</p>
-					<p className="text-gray-500 text-xl mt-2">View your pending and past notices</p>
-				</div>
-				{workspace.yourPermission.includes('manage_activity') && <div className="cardBtn" onClick={() => setIsOpen(true)}>
-					<p className="font-bold text-2xl leading-6 mt-1">New timeframe</p>
-					<p className="text-gray-500 text-xl mt-2">This will create a new timeframe</p>
-				</div>}
-				{workspace.yourPermission.includes('admin') && <div className="cardBtn" onClick={() => router.push(`/workspace/${id}/activity/quotas`)}>
-					<p className="font-bold text-2xl leading-6 mt-1">Manage quotas</p>
-					<p className="text-gray-500 text-xl mt-2">Manage your workspaces quotas</p>
-				</div>}
 			</div>
 
 			<Transition appear show={isOpen} as={Fragment}>
@@ -178,7 +284,7 @@ const Activity: pageWithLayout = () => {
 						leaveFrom="opacity-100"
 						leaveTo="opacity-0"
 					>
-						<div className="fixed inset-0 bg-black bg-opacity-25" />
+						<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 					</Transition.Child>
 
 					<div className="fixed inset-0 overflow-y-auto">
@@ -193,25 +299,30 @@ const Activity: pageWithLayout = () => {
 								leaveTo="opacity-0 scale-95"
 							>
 								<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-									<Dialog.Title
-										as="p"
-										className="my-auto text-2xl font-bold"
-									>
-										Reset activity
+									<Dialog.Title as="h3" className="text-lg font-medium text-gray-900">
+										Reset Activity Period
 									</Dialog.Title>
-									<Dialog.Description
-										as="p"
-										className="mb-10 text-sm text-gray-500"
-									>
-										Are you sure you want to create a new timeframe? This will reset all activity 
-									</Dialog.Description>
+									<div className="mt-2">
+										<p className="text-sm text-gray-500">
+											Are you sure you want to create a new timeframe? This will reset all activity data.
+										</p>
+									</div>
 
-
-
-									<div className="mt-4 flex">
-										<Button classoverride="" onPress={() => setIsOpen(false)}> Cancel </Button>
-										<Button classoverride="bg-red-500 hover:bg-red-300 ml-2" onPress={() => resetActivity()}> Reset </Button>
-
+									<div className="mt-4 flex gap-3">
+										<button
+											type="button"
+											className="flex-1 justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+											onClick={() => setIsOpen(false)}
+										>
+											Cancel
+										</button>
+										<button
+											type="button"
+											className="flex-1 justify-center rounded-lg border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+											onClick={() => resetActivity()}
+										>
+											Reset
+										</button>
 									</div>
 								</Dialog.Panel>
 							</Transition.Child>

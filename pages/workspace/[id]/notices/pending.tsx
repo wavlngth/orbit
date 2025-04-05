@@ -16,6 +16,7 @@ import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import Input from "@/components/input";
 import prisma, { inactivityNotice, user } from "@/utils/database";
+import { IconCalendarTime, IconCheck, IconX, IconAlertTriangle } from "@tabler/icons";
 
 type Form = {
 	startTime: string;
@@ -38,9 +39,7 @@ export const getServerSideProps = withPermissionCheckSsr(
 			include: {
 				user: true
 			}
-
 		});
-
 
 		return {
 			props: {
@@ -66,7 +65,7 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 
 	const updateNotice = async (notice: inactivityNotice & {
 		user: user;
-		}, status: string) => {
+	}, status: string) => {
 		const req = axios.post(`/api/workspace/${id}/activity/notices/update`, {
 			id: notice.id,
 			status
@@ -85,32 +84,86 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 	return <>
 		<Toaster position="bottom-center" />
 
-		<div className="pagePadding space-y-4">
-			<p className="text-4xl font-bold">{text}</p>
-			<p className="text-3xl font-bold !mt-8 !mb-4">Pending notices</p>
-			{notices.length < 1 && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">There are no pending notices.</p>
+		<div className="pagePadding">
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
 				</div>
-			)}
-			<div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-				{notices.map((notice: any) => (
-					<div className="bg-white p-4 rounded-md ring-1 ring-gray-300" key={notice.id}>
-						<h2 className="text-lg font-semibold">
-							{moment(new Date(notice.startTime)).format("MMM Do YYYY")} - {moment(new Date(notice.endTime as Date)).format("MMM Do YYYY")}
-						</h2>
-						<div className="flex mt-1">
-							<img src={notice.user?.picture} className="bg-primary rounded-full w-8 h-8 my-auto" />
-							<p className="font-semibold pl-2 leading-5 my-auto"> Created by {notice.user?.username} </p>
+
+				<div className="flex items-center justify-between mb-6">
+					<div className="flex items-center gap-3">
+						<div className="bg-primary/10 p-2 rounded-lg">
+							<IconCalendarTime className="w-5 h-5 text-primary" />
 						</div>
-						<p className="text-gray-500">{notice.reason}</p>
-						<div> 
-							<Button compact onClick={() => updateNotice(notice, 'approve')}> Approve </Button>
-							<Button compact onClick={() => updateNotice(notice, 'deny')} classoverride="bg-red-600 hover:bg-red-300 focus-visible:bg-red-300 ml-2"> Deny </Button>
+						<div>
+							<h2 className="text-lg font-medium text-gray-900">Pending Notices</h2>
+							<p className="text-sm text-gray-500">Review and manage inactivity notices</p>
 						</div>
 					</div>
-				))}
+					<div className="text-sm text-gray-500">
+						{notices.length} pending {notices.length === 1 ? 'notice' : 'notices'}
+					</div>
+				</div>
+
+				{notices.length < 1 ? (
+					<div className="bg-white rounded-xl shadow-sm p-8 text-center">
+						<img 
+							className="mx-auto h-48 mb-4 opacity-75" 
+							alt="No pending notices" 
+							src='/conifer-charging-the-battery-with-a-windmill.png' 
+						/>
+						<h3 className="text-lg font-medium text-gray-900 mb-1">No Pending Notices</h3>
+						<p className="text-sm text-gray-500">All inactivity notices have been reviewed</p>
+					</div>
+				) : (
+					<div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+						{notices.map((notice: any) => (
+							<div 
+								key={notice.id}
+								className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
+							>
+								<div className="flex items-center gap-3 mb-3">
+									<img 
+										src={notice.user?.picture} 
+										alt={notice.user?.username}
+										className="w-10 h-10 rounded-full ring-2 ring-primary/10" 
+									/>
+									<div>
+										<h3 className="text-sm font-medium text-gray-900">{notice.user?.username}</h3>
+										<p className="text-xs text-gray-500">Requested inactivity period</p>
+									</div>
+								</div>
+
+								<div className="bg-gray-50 rounded-lg p-3 mb-3">
+									<div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+										<IconCalendarTime className="w-4 h-4" />
+										<span>
+											{moment(new Date(notice.startTime)).format("MMM Do")} - {moment(new Date(notice.endTime)).format("MMM Do YYYY")}
+										</span>
+									</div>
+									<p className="text-sm text-gray-600">{notice.reason}</p>
+								</div>
+
+								<div className="flex gap-2">
+									<button
+										onClick={() => updateNotice(notice, 'approve')}
+										className="flex items-center justify-center gap-1 flex-1 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
+									>
+										<IconCheck className="w-4 h-4" />
+										Approve
+									</button>
+									<button
+										onClick={() => updateNotice(notice, 'deny')}
+										className="flex items-center justify-center gap-1 flex-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
+									>
+										<IconX className="w-4 h-4" />
+										Deny
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
+				)}
 			</div>
 		</div>
 	</>;

@@ -1,40 +1,65 @@
 import React from "react";
-import { useRecoilState } from "recoil";
-import { workspacestate } from "@/state";
-
 import { FC } from '@/types/settingsComponent'
-import { inactivityNotice } from "@prisma/client";
 import moment from "moment";
+import { IconCheck, IconX, IconClock } from "@tabler/icons";
 
-type Props = {
-	notices: inactivityNotice[]
+interface Props {
+	notices: any[];
 }
 
 const Notices: FC<Props> = ({ notices }) => {
-	const [workspace, setWorkspace] = useRecoilState(workspacestate);	
+	const getStatusIcon = (status: string) => {
+		switch (status) {
+			case "approved":
+				return <IconCheck className="w-5 h-5 text-green-500" />;
+			case "declined":
+				return <IconX className="w-5 h-5 text-red-500" />;
+			default:
+				return <IconClock className="w-5 h-5 text-yellow-500" />;
+		}
+	};
+
+	const getStatusText = (status: string) => {
+		switch (status) {
+			case "approved":
+				return "Approved";
+			case "declined":
+				return "Declined";
+			default:
+				return "Under Review";
+		}
+	};
 
 	return (
-		<div className="mt-2">
-			{notices.length < 1 && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">This user does not have any past notices.</p>
-				</div>
-			)}
-			<div className="grid gap-1 xl:grid-cols-3 lg:grid-cols-2">
-				{notices.map((notice) => (
-					<div className="bg-white p-4 rounded-md" key={notice.id}>
-						<h2 className="text-lg font-semibold">
-							{moment(new Date(notice.startTime)).format("MMM Do YYYY")} - {moment(new Date(notice.endTime as Date)).format("MMM Do YYYY")}
-						</h2>
-						<p className="text-gray-500">{notice.reason}</p>
-						<p
-							className={`${notice.reviewed ? notice.approved ? `text-green-600` : `text-red-600` : `text-amber-600`} font-semibold`}
-						>
-							{notice.reviewed ? notice.approved ? `Approved` : `Declined` : `Under review`}
-						</p>
+		<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+			<div className="p-6">
+				<h2 className="text-lg font-medium text-gray-900 mb-4">Inactivity Notices</h2>
+				{notices.length === 0 ? (
+					<p className="text-sm text-gray-500 italic">No inactivity notices found.</p>
+				) : (
+					<div className="space-y-4">
+						{notices.map((notice: any) => (
+							<div key={notice.id} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+								<div className="flex-shrink-0">
+									{getStatusIcon(notice.status)}
+								</div>
+								<div className="flex-grow">
+									<div className="flex items-center justify-between mb-1">
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium text-gray-900">
+												{getStatusText(notice.status)}
+											</span>
+											<span className="text-xs text-gray-500">
+												{moment(notice.startTime).format("DD MMM")} - {moment(notice.endTime).format("DD MMM YYYY")}
+											</span>
+										</div>
+									</div>
+									<p className="text-sm text-gray-600">{notice.reason}</p>
+								</div>
+							</div>
+						))}
 					</div>
-				))}
+				)}
 			</div>
 		</div>
 	);

@@ -21,6 +21,7 @@ import { getUsername, getThumbnail } from "@/utils/userinfoEngine";
 import Image from 'next/image'
 import Checkbox from "@/components/checkbox";
 import Tooltip from "@/components/tooltip";
+import { IconUsers, IconPlus, IconTrash, IconPencil, IconCalendar, IconClipboardList, IconArrowLeft } from "@tabler/icons";
 
 
 export const getServerSideProps = withPermissionCheckSsr(
@@ -125,18 +126,23 @@ export const getServerSideProps = withPermissionCheckSsr(
 		}
 	})
 
-	type Notes = {
-		content: string
-	}
+type Notes = {
+	[key: string]: string;
+}
 
-	type Rep = {
-		userid: number
-	}
+type Rep = {
+	userid: number
+}
 
-	type Visit = {
-		name: string,
-		time: Date
-	}
+type Visit = {
+	name: string,
+	time: Date
+}
+
+type EditVisit = {
+	name: string;
+	time: string;
+}
 
 type pageProps = InferGetServerSidePropsType<typeof getServerSideProps>
 const ManageAlly: pageWithLayout<pageProps> = (props) => {
@@ -220,12 +226,26 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 		return colors[Math.floor(Math.random() * colors.length)];
 	}
 
-	const updateNoteValue = (event: any, index: any) => {
-		let updateNote = [...notes]
-		updateNote[index] = event.target.value
-		setNotes(updateNote)
-		return event.target.value
-	}
+	const handleVisitChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: 'name' | 'time') => {
+		setEditContent({ ...editContent, [field]: e.target.value });
+		return true;
+	};
+
+	const handleVisitBlur = async () => {
+		return true;
+	};
+
+	const handleNoteChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, index: number) => {
+		const newValue = e.target.value;
+		let updateNote = [...notes];
+		updateNote[index] = newValue;
+		setNotes(updateNote);
+		return true;
+	};
+
+	const handleNoteBlur = async () => {
+		return true;
+	};
 
 	const createNote = () => {
 		setNotes([...notes, "This note is empty!"])
@@ -246,6 +266,12 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 		}
 	}
 	const visitform = useForm<Visit>()
+	const notesform = useForm<Notes>({
+		defaultValues: notes.reduce((acc: Notes, note: string, index: number) => {
+			acc[`note-${index}`] = note;
+			return acc;
+		}, {} as Notes)
+	});
 
 	const createVisit: SubmitHandler<Visit> = async({ name, time }) => {
 		const axiosPromise = axios.post(
@@ -308,11 +334,17 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 		);
 	}
 
+	const editform = useForm<EditVisit>({
+		defaultValues: {
+			name: editContent.name,
+			time: editContent.time
+		}
+	});
+
 	return <>
 		<Toaster position="bottom-center" />
 
 		{/* create visit modal */}
-
 		<Transition appear show={isOpen} as={Fragment}>
 			<Dialog as="div" className="relative z-10" onClose={() => setIsOpen(false)}>
 				<Transition.Child
@@ -324,7 +356,7 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 					leaveFrom="opacity-100"
 					leaveTo="opacity-0"
 				>
-					<div className="fixed inset-0 bg-black bg-opacity-25" />
+					<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 				</Transition.Child>
 
 				<div className="fixed inset-0 overflow-y-auto">
@@ -339,23 +371,44 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 							leaveTo="opacity-0 scale-95"
 						>
 							<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<Dialog.Title as="p" className="my-auto text-2xl font-bold">Create alliance visit</Dialog.Title>
+								<Dialog.Title as="h3" className="text-lg font-medium text-gray-900 mb-4">
+									Create New Visit
+								</Dialog.Title>
 
 								<div className="mt-2">
-									<FormProvider {...form}>
-										{/* @ts-ignore */}
-										<form onSubmit={handleSubmit(createVisit)}>
-											<Input label="Visit Title" {...register("name")} />
-											<Input label="Visit Time" type="datetime-local" {...register("time")} />
+									<FormProvider {...visitform}>
+										<form onSubmit={visitform.handleSubmit(createVisit)}>
+											<div className="space-y-4">
+												<Input 
+													label="Visit Title" 
+													{...visitform.register("name", { required: true })} 
+												/>
+												<Input 
+													label="Visit Time" 
+													type="datetime-local" 
+													{...visitform.register("time", { required: true })} 
+												/>
+											</div>
 											<input type="submit" className="hidden" />
 										</form>
 									</FormProvider>
 								</div>
 
-								<div className="mt-4 flex">
-									<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setIsOpen(false)}> Cancel </Button>
-									{/* @ts-ignore */}
-									<Button classoverride="" onPress={handleSubmit(createVisit)}> Submit </Button>
+								<div className="mt-6 flex gap-3">
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 transition-colors"
+										onClick={() => setIsOpen(false)}
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+										onClick={visitform.handleSubmit(createVisit)}
+									>
+										Create Visit
+									</button>
 								</div>
 							</Dialog.Panel>
 						</Transition.Child>
@@ -365,7 +418,6 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 		</Transition>
 
 		{/* edit visit modal */}
-
 		<Transition appear show={isEditOpen} as={Fragment}>
 			<Dialog as="div" className="relative z-10" onClose={() => setEditOpen(false)}>
 				<Transition.Child
@@ -377,7 +429,7 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 					leaveFrom="opacity-100"
 					leaveTo="opacity-0"
 				>
-					<div className="fixed inset-0 bg-black bg-opacity-25" />
+					<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 				</Transition.Child>
 
 				<div className="fixed inset-0 overflow-y-auto">
@@ -392,23 +444,44 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 							leaveTo="opacity-0 scale-95"
 						>
 							<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<Dialog.Title as="p" className="my-auto text-2xl font-bold">Edit alliance visit</Dialog.Title>
+								<Dialog.Title as="h3" className="text-lg font-medium text-gray-900 mb-4">
+									Edit Visit
+								</Dialog.Title>
 
 								<div className="mt-2">
-									<FormProvider {...form}>
+									<FormProvider {...editform}>
 										<form>
-											{/* @ts-ignore */}
-											<Input label="Visit Title" value={editContent.name} onChange={(e) => { setEditContent({ ...editContent, name: e.target.value }) }} />
-											{/* @ts-ignore */}
-											<Input label="Visit Time" value={editContent.time} onChange={(e) => { setEditContent({ ...editContent, time: e.target.value }) }} type="datetime-local" />
+											<div className="space-y-4">
+												<Input 
+													label="Visit Title" 
+													{...editform.register("name")}
+												/>
+												<Input 
+													label="Visit Time" 
+													type="datetime-local" 
+													{...editform.register("time")}
+												/>
+											</div>
 											<input type="submit" className="hidden" />
 										</form>
 									</FormProvider>
 								</div>
 
-								<div className="mt-4 flex">
-									<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setEditOpen(false)}> Cancel </Button>
-									<Button classoverride="" onPress={() => {updateVisit()}}> Submit </Button>
+								<div className="mt-6 flex gap-3">
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 transition-colors"
+										onClick={() => setEditOpen(false)}
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+										onClick={() => {updateVisit()}}
+									>
+										Update Visit
+									</button>
 								</div>
 							</Dialog.Panel>
 						</Transition.Child>
@@ -417,92 +490,255 @@ const ManageAlly: pageWithLayout<pageProps> = (props) => {
 			</Dialog>
 		</Transition>
 
-		<div className="pagePadding space-y-4">
-			<p className="text-4xl font-bold">{text}</p>
-			<div className="flex flex-row gap-4 flex-wrap items-center">
-				<img src={ally.icon} className="w-16 h-16 rounded-full" />
-				<div className="flex flex-col">
-					<h2 className="font-bold text-3xl leading-tight">{ally.name}</h2>
-					<div className="flex flex-row ml-[15px]">
-					{ally.reps.map((rep: any) => {
-								return (<div className="ml-[-15px]" key={rep.userid}>
-								<Tooltip orientation="top" tooltipText={rep.username}>
-									<img src={rep.thumbnail} className="w-12 h-12 rounded-full bg-primary z-0 hover:z-50 hover:shadow-xl border-4 border-gray-100"></img>
-								</Tooltip>
-							</div>)
-							})}
+		<div className="pagePadding">
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<button 
+						onClick={() => router.push(`/workspace/${id}/allies`)}
+						className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+					>
+						<IconArrowLeft className="w-5 h-5" />
+					</button>
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+				</div>
+
+				{/* Ally Header */}
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center gap-4">
+							<img src={ally.icon} className="w-16 h-16 rounded-full" />
+							<div>
+								<h2 className="text-xl font-medium text-gray-900">{ally.name}</h2>
+								<p className="text-sm text-gray-500 mt-1">Group ID: {ally.groupId}</p>
+								<div className="flex flex-wrap gap-2 mt-2">
+									{ally.reps.map((rep: any) => (
+										<Tooltip key={rep.userid} orientation="top" tooltipText={rep.username}>
+											<img 
+												src={rep.thumbnail} 
+												className="w-8 h-8 rounded-full bg-primary border-2 border-white hover:scale-110 transition-transform" 
+												alt={rep.username}
+											/>
+										</Tooltip>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Notes Section */}
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconClipboardList className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-lg font-medium text-gray-900">Notes</h2>
+									<p className="text-sm text-gray-500">Keep track of important information about this ally</p>
+								</div>
+							</div>
+							<button
+								onClick={() => createNote()}
+								className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+							>
+								<IconPlus className="w-4 h-4" />
+								<span className="text-sm font-medium">Add Note</span>
+							</button>
+						</div>
+
+						{notes.length === 0 ? (
+							<div className="text-center py-8">
+								<div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto">
+									<div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+										<IconClipboardList className="w-6 h-6 text-primary" />
+									</div>
+									<h3 className="text-sm font-medium text-gray-900 mb-1">No Notes</h3>
+									<p className="text-sm text-gray-500">You haven't added any notes yet</p>
+								</div>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{notes.map((note: any, index: any) => (
+									<div key={index} className="bg-gray-50 rounded-lg p-4">
+										<div className="flex items-start justify-between mb-3">
+											<p className={`text-sm text-gray-700 ${editNotes.includes(index) ? "hidden" : null}`}>
+												{notes[index]}
+											</p>
+											<div className="flex items-center gap-2">
+												<button
+													onClick={() => noteEdit(index)}
+													className="p-1 text-gray-400 hover:text-primary transition-colors"
+												>
+													<IconPencil className="w-4 h-4" />
+												</button>
+												<button
+													onClick={() => deleteNote(index)}
+													className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+												>
+													<IconTrash className="w-4 h-4" />
+												</button>
+											</div>
+										</div>
+										<div className={editNotes.includes(index) ? "" : "hidden"}>
+											<FormProvider {...notesform}>
+												<Input 
+													textarea 
+													{...notesform.register(`note-${index}`)}
+													value={notes[index]} 
+												/>
+											</FormProvider>
+										</div>
+									</div>
+								))}
+								<button
+									onClick={() => saveNotes()}
+									className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+								>
+									Save Notes
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Representatives Section */}
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconUsers className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-lg font-medium text-gray-900">Representatives</h2>
+									<p className="text-sm text-gray-500">Manage who can represent this ally</p>
+								</div>
+							</div>
+						</div>
+
+						{users.length < 1 ? (
+							<div className="text-center py-8">
+								<div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto">
+									<div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+										<IconUsers className="w-6 h-6 text-primary" />
+									</div>
+									<h3 className="text-sm font-medium text-gray-900 mb-1">No Representatives</h3>
+									<p className="text-sm text-gray-500">Nobody has the represent alliance permissions</p>
+								</div>
+							</div>
+						) : (
+							<div className="space-y-4">
+								<div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
+									{users.map((user: any) => (
+										<label
+											key={user.userid}
+											className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+										>
+											<input
+												type="checkbox"
+												value={user.userid}
+												onChange={handleCheckboxChange}
+												checked={reps.includes(user.userid)}
+												className="rounded border-gray-300 text-primary focus:ring-primary"
+											/>
+											<img 
+												src={user.thumbnail} 
+												className="w-8 h-8 rounded-full bg-primary" 
+												alt={user.username}
+											/>
+											<span className="text-sm text-gray-900">{user.username}</span>
+										</label>
+									))}
+								</div>
+								<button
+									onClick={() => updateReps()}
+									className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+								>
+									Save Representatives
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Visits Section */}
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconCalendar className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-lg font-medium text-gray-900">Visits</h2>
+									<p className="text-sm text-gray-500">Schedule and manage alliance visits</p>
+								</div>
+							</div>
+							<button
+								onClick={() => setIsOpen(true)}
+								className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+							>
+								<IconPlus className="w-4 h-4" />
+								<span className="text-sm font-medium">New Visit</span>
+							</button>
+						</div>
+
+						{visits.length === 0 ? (
+							<div className="text-center py-8">
+								<div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto">
+									<div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+										<IconCalendar className="w-6 h-6 text-primary" />
+									</div>
+									<h3 className="text-sm font-medium text-gray-900 mb-1">No Visits</h3>
+									<p className="text-sm text-gray-500">You haven't scheduled any visits yet</p>
+								</div>
+							</div>
+						) : (
+							<div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+								{visits.map((visit: any) => (
+									<div key={visit.id} className="bg-gray-50 rounded-lg p-4">
+										<div className="flex items-start justify-between mb-3">
+											<div>
+												<h3 className="text-sm font-medium text-gray-900">{visit.name}</h3>
+												<div className="flex items-center gap-2 mt-2">
+													<img 
+														src={visit.hostThumbnail} 
+														className="w-6 h-6 rounded-full bg-primary" 
+														alt={visit.hostUsername}
+													/>
+													<p className="text-xs text-gray-500">
+														Hosted by {visit.hostUsername}
+													</p>
+												</div>
+												<p className="text-xs text-gray-500 mt-1">
+													{new Date(visit.time).toLocaleDateString()} at {new Date(visit.time).getHours().toString().padStart(2, '0')}:{new Date(visit.time).getMinutes().toString().padStart(2, '0')}
+												</p>
+											</div>
+											<div className="flex items-center gap-1">
+												<button
+													onClick={() => editVisit(visit.id, visit.name)}
+													className="p-1 text-gray-400 hover:text-primary transition-colors"
+												>
+													<IconPencil className="w-4 h-4" />
+												</button>
+												<button
+													onClick={() => deleteVisit(visit.id)}
+													className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+												>
+													<IconTrash className="w-4 h-4" />
+												</button>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
-			
-			<p className="text-gray-500 text-sm dark:text-gray-200">Notes</p>
-
-			<FormProvider {...form}>
-				{/* @ts-ignore */}
-				<div className="flex flex-col gap-4">
-					{notes.map((note: any, index: any) => {
-						return(<div key={index} className="bg-white p-4 rounded-md ring-1 ring-gray-300">
-							<p className={`mb-4 ${editNotes.includes(index) ? "hidden" : null}`}>{notes[index]}</p>
-								<div className={editNotes.includes(index) ? "" : "hidden"}>
-									{/* @ts-ignore */}
-									<Input textarea value={notes[index]} onChange={(e: any) => { return updateNoteValue(e, index) }}></Input>
-								</div>
-							<div className="flex flex-row flex-wrap gap-4">
-							<Button classoverride="ml-0" onClick={() => noteEdit(index)}>{editNotes.includes(index) ? "Close Edit" : "Edit Note"}</Button>
-							<Button classoverride="ml-0 bg-red-600 hover:bg-red-300" onClick={() => deleteNote(index)}>Delete Note</Button>
-							</div>
-						</div>
-						)
-					})}
-				</div>
-				<input type="submit" className="hidden" />
-				<div className="flex flex-row gap-4">
-					<Button classoverride="ml-0" onClick={() => saveNotes()}>Save Notes</Button>
-					<Button classoverride="ml-0 bg-green-600 hover:bg-green-300" onClick={() => {createNote()}}>Create Note</Button>
-				</div>
-			</FormProvider>
-
-			{ users.length < 1 && <p className="text-gray-500 text-sm dark:text-gray-200">Nobody has the represent alliance permissions!</p> }
-			{ users.length >= 1 && <p className="text-gray-500 text-sm dark:text-gray-200">Representatives</p> }
-			<div className="p-4 max-h-64 overflow-auto flex flex-col gap-4 bg-white rounded-md ring-1 ring-gray-300">
-				{users.map((user: any) => {
-					return (<div className="flex gap-4 items-center" key={user.userid}>
-						<Checkbox value={user.userid} onChange={handleCheckboxChange} checked={reps.includes(user.userid)} />
-						<img src={user.thumbnail} className="w-10 h-10 rounded-full bg-primary"></img>
-						<p>{user.username}</p>
-					</div>)
-				})}
-			</div>
-			<Button onPress={() => { updateReps() }}>Save Representatives</Button>
-			<button className="cardBtn" onClick={() => setIsOpen(true)}>
-				<p className="font-bold text-2xl leading-5 mt-1">Create new ally visit</p>
-				<p className="text-gray-400 font-normal text-base mt-1">Schedule an alliance visit for your alliance representatives to attend</p>
-			</button>
-			{ visits.length < 1 && <p>You haven't got any alliance visits planned, why not schedule one?</p> }
-			<div className="flex flex-col gap-4">
-				{visits.map((visit: any) => {
-					return (
-						<div key={visit.id} className="p-4 bg-white rounded-md ring-1 ring-gray-300">
-							<p className="font-bold text-2xl leading-5 mt-1">{visit.name}</p>
-							<div className="flex flex-row gap-4 mt-4 items-center">
-								<img src={visit.hostThumbnail} className="rounded-full w-12 h-12 bg-primary" />
-								<div className="flex flex-col">
-									<p className="font-bold text-lg">Hosted by {visit.hostUsername}</p>
-									<p>On {new Date(visit.time).toLocaleDateString()} at {new Date(visit.time).getHours().toString().padStart(2, '0')}:{new Date(visit.time).getMinutes().toString().padStart(2, '0')} </p>
-								</div>
-							</div>
-							<div className="flex gap-4">
-									<Button classoverride="bg-red-600 hover:bg-red-300" onClick={() => deleteVisit(visit.id)}>Delete</Button>
-									<Button classoverride="bg-amber-600 hover:bg-amber-300 m-0" onClick={() => editVisit(visit.id, visit.name)}>Edit</Button>
-								</div>
-						</div>
-					)
-				})}
-			</div>
-			
-
 		</div>
-
 	</>;
 }
 

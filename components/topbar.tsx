@@ -1,14 +1,16 @@
 import type { NextPage } from "next";
 import { loginState } from "../state";
 import { useRecoilState } from "recoil";
-import { Menu } from "@headlessui/react";
+import { Menu, Transition } from "@headlessui/react";
 import { useRouter } from "next/router";
-import { IconLogout, IconSettings } from "@tabler/icons";
+import { IconLogout, IconSettings, IconChevronDown } from "@tabler/icons";
 import axios from "axios";
+import { Fragment } from "react";
 
 const Topbar: NextPage = () => {
 	const [login, setLogin] = useRecoilState(loginState);
 	const router = useRouter();
+
 	async function logout() {
 		await axios.post("/api/auth/logout");
 		setLogin({
@@ -21,77 +23,99 @@ const Topbar: NextPage = () => {
 		});
 		router.push('/login');
 	}
-	return (
-		<div className="z-10 h-12 w-screen flex-row flex py-12 lg:px-48 md:px-32 sm:px-20 xs:px-9 px-8">
-			<div className="h-full flex flex-row w-full">
 
-				<div className="flex flex-row my-auto w-full">
-					<button className="h-auto flex flex-row mr-auto rounded-xl py-1 hover:bg-gray-200 dark:hover:bg-gray-800 px-2 transition cursor-pointer">
-						<img
-							src='./Icon_Transparent.svg'
-							className="rounded-full h-8 w-8 my-auto"
-							alt="Tovy logo"
-						/>
-						<p className="my-auto text-md font-medium pl-2 pr-2">
-							Tovy
-						</p>
-					</button>
-					<Menu as="div" className="relative inline-block text-left">
-						<div className="">
-							<Menu.Button className="h-auto flex flex-row ml-auto rounded-xl py-1 hover:bg-gray-200 dark:hover:bg-gray-800 px-2 transition cursor-pointer">
-								<img
-									src={login?.thumbnail}
-									className="rounded-full bg-gray-400 h-8 w-8 my-auto"
-									alt="User avatar"
-								/>
-								<p className="my-auto text-md font-medium pl-2">
-									{login?.displayname}
-								</p>
-							</Menu.Button>
-						</div>
-						<Menu.Items className="absolute right-0 z-20 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus-visible:outline-none">
-							<div className="py-1">
-								<Menu.Item>
-									<a className="flex flex-row px-4 py-2 text-sm">
-										<img
-											src={login?.thumbnail}
-											className="rounded-full bg-gray-400 h-8 w-8 my-auto"
-											alt="User avatar"
-										/>
-										<div className="ml-2"> Signed in as <br />
-											<span className="font-medium"> {login.username} </span> </div>
-									</a>
-								</Menu.Item>
-								<div className="w-full h-px bg-gray-200 dark:bg-gray-600"></div>
-								<Menu.Item>
-									{({ active }) => (
-										<a
-											className={`${active ? "bg-tovybg text-white" : "text-gray-700 dark:text-white"
-												}  px-3 py-2 text-sm rounded-xl m-1 mb-0 font-medium flex flex-row cursor-pointer`}
-										>
-											<IconSettings size={22} className="inline-block" />
-											<p className="ml-2"> Account settings </p>
-										</a>
-									)}
-								</Menu.Item>
-								<Menu.Item>
-									{({ active }) => (
-										<a
-											className={`${active ? "bg-tovybg text-white" : "text-gray-700 dark:text-white"
-												}  px-3 py-2 text-sm rounded-xl m-1 mb-0 font-medium flex flex-row cursor-pointer`}
-											onClick={logout}
-										>
-											<IconLogout size={22} className="inline-block" />
-											<p className="ml-2"> Logout </p>
-										</a>
-									)}
-								</Menu.Item>
-							</div>
-						</Menu.Items>
+	return (
+		<header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="flex justify-between items-center h-16">
+					<div className="flex items-center">
+		
+							<img
+								src='/planetary.svg'
+								className="h-8 w-32"
+								alt="Planetary logo"
+							/>
+					
+				
+					</div>
+
+					<Menu as="div" className="relative">
+						<Menu.Button className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+							<img
+								src={login?.thumbnail}
+								className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600"
+								alt={`${login?.displayname}'s avatar`}
+							/>
+							<span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+								{login?.displayname}
+							</span>
+							<IconChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+						</Menu.Button>
+
+						<Transition
+							as={Fragment}
+							enter="transition ease-out duration-100"
+							enterFrom="transform opacity-0 scale-95"
+							enterTo="transform opacity-100 scale-100"
+							leave="transition ease-in duration-75"
+							leaveFrom="transform opacity-100 scale-100"
+							leaveTo="transform opacity-0 scale-95"
+						>
+							<Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+								<div className="p-2">
+									<div className="px-3 py-2">
+										<div className="flex items-center space-x-3">
+											<img
+												src={login?.thumbnail}
+												className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600"
+												alt={`${login?.displayname}'s avatar`}
+											/>
+											<div>
+												<div className="text-sm font-medium text-gray-900 dark:text-white">
+													{login?.displayname}
+												</div>
+												<div className="text-xs text-gray-500 dark:text-gray-400">
+													@{login?.username}
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+
+									{/* <Menu.Item>
+										{({ active }) => (
+											<button
+												className={`${
+													active ? 'bg-gray-100 dark:bg-gray-700' : ''
+												} group flex w-full items-center rounded-md px-3 py-2 text-sm`}
+											>
+												<IconSettings className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+												<span className="text-gray-700 dark:text-gray-200">Account settings</span>
+											</button>
+										)}
+									</Menu.Item> */}
+
+									<Menu.Item>
+										{({ active }) => (
+											<button
+												onClick={logout}
+												className={`${
+													active ? 'bg-gray-100 dark:bg-gray-700' : ''
+												} group flex w-full items-center rounded-md px-3 py-2 text-sm`}
+											>
+												<IconLogout className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+												<span className="text-gray-700 dark:text-gray-200">Sign out</span>
+											</button>
+										)}
+									</Menu.Item>
+								</div>
+							</Menu.Items>
+						</Transition>
 					</Menu>
 				</div>
 			</div>
-		</div>
+		</header>
 	);
 };
 

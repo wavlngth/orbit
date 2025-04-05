@@ -6,10 +6,9 @@ import { workspacestate } from "@/state";
 import Button from "@/components/button";
 import type { document, user } from "@/utils/database";
 import { useRouter } from "next/router";
-import { IconChevronRight } from '@tabler/icons'
+import { IconChevronRight, IconFileText } from '@tabler/icons'
 
-
-const Color: React.FC = () => {
+const Docs: React.FC = () => {
 	const [docs, setDocs] = useState<(document & {
 		owner: user
 	})[]>([]);
@@ -22,37 +21,68 @@ const Color: React.FC = () => {
 		})
 	}, []);
 
-	const goToGuide = (id: string) => {
-		router.push(`/workspace/${router.query.id}/docs/${id}`)
+	const goToDocs = () => {
+		router.push(`/workspace/${router.query.id}/docs`)
 	}
-	
 
 	return (
-		<div>
-			<p className="text-3xl font-medium mb-5">Docs</p>
-			{docs.length < 1 && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">There are no published documents.</p>
+		<div className="flex flex-col gap-4">
+			{docs.length === 0 ? (
+				<div className="flex flex-col items-center justify-center py-8 text-center">
+					<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+						<IconFileText className="w-8 h-8 text-primary" />
+					</div>
+					<p className="text-lg font-medium text-gray-900 dark:text-white mb-1">No documents yet</p>
+					<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Create your first document to get started</p>
+					<button
+						onClick={goToDocs}
+						className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+					>
+						View Documents
+						<IconChevronRight className="w-4 h-4" />
+					</button>
 				</div>
-			)}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
-				{docs.slice(0, 3).map((document) => (
-					<div className="" key={document.id} onClick={() => goToGuide(document.id)}>
-						<div className="px-5 py-4 backdrop-blur flex cardBtn cursor-pointer">
-							<div><p className="text-xl font-bold"> {document.name} </p>
-								<div className="flex mt-1">
-									<img src={document.owner?.picture!} alt="owner picture" className="bg-primary rounded-full w-8 h-8 my-auto" />
-									<p className="font-semibold pl-2 leading-5 my-auto"> Created by {document.owner?.username} </p>
+			) : (
+				<div className="flex flex-col gap-4">
+					{docs.slice(0, 3).map((document) => (
+						<div 
+							key={document.id} 
+							className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+							onClick={() => router.push(`/workspace/${router.query.id}/docs/${document.id}`)}
+						>
+							<div className="flex items-start gap-3">
+								<div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+									<IconFileText className="w-5 h-5 text-primary" />
+								</div>
+								<div className="flex-1 min-w-0">
+									<p className="font-medium text-gray-900 dark:text-white truncate">
+										{document.name}
+									</p>
+									<div className="mt-1 flex items-center gap-2">
+										<img 
+											src={document.owner?.picture!} 
+											alt={`${document.owner?.username}'s avatar`}
+											className="rounded-lg h-6 w-6 bg-primary object-cover" 
+										/>
+										<p className="text-sm text-gray-500 dark:text-gray-400">
+											Created by {document.owner?.username}
+										</p>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				))}
-			</div>
+					))}
+					<button
+						onClick={goToDocs}
+						className="inline-flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+					>
+						View all documents
+						<IconChevronRight className="w-4 h-4" />
+					</button>
+				</div>
+			)}
 		</div>
 	)
 };
 
-
-export default Color;
+export default Docs;

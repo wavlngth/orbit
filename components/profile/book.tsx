@@ -1,110 +1,157 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { FC } from '@/types/settingsComponent'
 import { useRecoilState } from "recoil";
 import { workspacestate } from "@/state";
-import { FC } from '@/types/settingsComponent'
+import { IconPencil, IconCheck, IconX, IconAlertTriangle, IconStar, IconShieldCheck, IconClipboardList } from "@tabler/icons";
 import axios from "axios";
-import { Listbox } from "@headlessui/react";
-import Button from "../button";
-import { userBook, Prisma } from "@prisma/client";
-import { getDisplayName } from "@/utils/userinfoEngine";
-import {useRouter} from "next/router";
+import { useRouter } from "next/router";
+import { toast } from "react-hot-toast";
+import moment from "moment";
 
-const types = ["Warning", "Promotion", "Suspension", "Fired"]
-
-type UserBookWithAdmin = Prisma.userBookGetPayload<{
-	include: { admin: true }
-}>
-
-type Props = {
-	userBook: UserBookWithAdmin[];
+interface Props {
+	userBook: any[];
+	onRefetch?: () => void;
 }
 
-const Book: FC<Props> = ({ userBook }) => {
-	const [workspace, setWorkspace] = useRecoilState(workspacestate);	
-	const [message, setMessage] = useState("");
-	const [type, setType] = useState(types[0]);
-	const [book, setBook] = useState(userBook || []);
+const Book: FC<Props> = ({ userBook, onRefetch }) => {
 	const router = useRouter();
+	const { id } = router.query;
+	const [workspace, setWorkspace] = useRecoilState(workspacestate);
+	const [text, setText] = useState("");
+	const [type, setType] = useState("warning");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	//make a function that makes the first char uppercase
-	const capitalize = (str: string) => {
-		return str.charAt(0).toUpperCase() + str.slice(1);
-	}
+	const addNote = async () => {
+		if (!text) {
+			toast.error("Please enter a note");
+			return;
+		}
 
-	const sendBook = async () => {
-		const req = await axios.post(`/api/workspace/${workspace.groupId}/userbook/${router.query.uid}/new`, {
-			notes: message,
-			type: type.toLocaleLowerCase()
-		});
-		setBook([...book, req.data.log]);
-		setMessage("");
-	}
-		
+		setIsSubmitting(true);
+		try {
+			await axios.post(`/api/workspace/${id}/userbook/${router.query.uid}/new`, {
+				notes: text,
+				type: type
+			});
+
+			setText("");
+			toast.success("Note added successfully");
+			router.reload();
+		} catch (error) {
+			console.error("Error adding note:", error);
+			toast.error("Failed to add note");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const getIcon = (type: string) => {
+		switch (type) {
+			case "warning":
+				return <IconAlertTriangle className="w-5 h-5 text-yellow-500" />;
+			case "promotion":
+				return <IconStar className="w-5 h-5 text-primary" />;
+			case "suspension":
+				return <IconX className="w-5 h-5 text-red-500" />;
+			case "fire":
+				return <IconX className="w-5 h-5 text-red-500" />;
+			default:
+				return <IconPencil className="w-5 h-5 text-gray-500" />;
+		}
+	};
 
 	return (
-		<div className="mt-2">
-			<div className="grid grid-rows-1 grid-cols-2 gap-2 mb-4">
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Warnings</p>
-					<p className="mt-3 text-8xl font-extralight">{userBook.filter(b => b.type === "warning").length}</p>
-				</div>
-				<div className="bg-white p-4 rounded-md">
-					<p className="font-medium text-xl leading-4 mt-1 text-gray-400">Promotions</p>
-					<p className="mt-3 text-8xl font-extralight">{userBook.filter(b => b.type === "promotion").length}</p>
+		<div className="space-y-6">
+			<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+				<div className="p-6">
+					<h2 className="text-lg font-medium text-gray-900 mb-4">Add New Note</h2>
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+								Type
+							</label>
+							<select
+								id="type"
+								value={type}
+								onChange={(e) => setType(e.target.value)}
+								className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+							>
+								<option value="warning">Warning</option>
+								<option value="promotion">Promotion</option>
+								<option value="suspension">Suspension</option>
+								<option value="fire">Fire</option>
+							</select>
+						</div>
+						<div>
+							<label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+								Note
+							</label>
+							<textarea
+								id="note"
+								rows={4}
+								value={text}
+								onChange={(e) => setText(e.target.value)}
+								placeholder="Enter your note here..."
+								className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+							/>
+						</div>
+						<button
+							onClick={addNote}
+							disabled={isSubmitting}
+							className="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							{isSubmitting ? (
+								<>
+									<svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+										<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+									Adding...
+								</>
+							) : (
+								"Add Note"
+							)}
+						</button>
+					</div>
 				</div>
 			</div>
 
-			<hr className="mb-4" />
-
-			<textarea className="border border-[#AAAAAA] p-2.5 rounded-md w-full focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-primary focus-visible:outline-none placeholder-[#AAAAAA] resize-y h-16 " placeholder="Type your message" onChange={(e) => setMessage(e.target.value)} value={message} />
-			<Listbox value={type} onChange={setType}>
-				<Listbox.Button className="h-auto pr-36 mt-2 flex flex-row rounded-md py-2 bg-white hover:bg-gray-200 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800 px-2 transition cursor-pointer outline-1 outline-gray-300 outline mb-1 focus-visible:bg-gray-200">
-					<p className="my-auto text-xl pl-2 font-medium">
-						{type}
-					</p>
-				</Listbox.Button>
-				<Listbox.Options className="z-20 mt-2 w-56 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-300 focus-visible:outline-none overflow-clip">
-					{types.map((type) => (
-						<Listbox.Option
-							className={({ active }) =>
-							`${active ? 'text-white bg-primary' : 'text-gray-900'} cursor-pointer select-none py-2 pl-3 pr-9`
-							}
-							key={type}
-							value={type}
-						>
-							{({ selected }) => (
-								<>
-									<div className="flex items-center">
-										<span
-											className={`${selected ? 'font-semibold' : 'font-normal'} block truncate text-xl`}
-										>
-											{type}
-										</span>
-									</div>
-								</>
-							)}
-						</Listbox.Option>
-					))}
-				</Listbox.Options>
-			</Listbox>
-
-			{!!message.length && <Button classoverride="mt-2 w-24" workspace onPress={sendBook}>Send</Button>}
-
-			<div className="flex flex-col gap-2 mt-3">
-				{book.map((book) => (
-					<div className="bg-white p-4 rounded-md" key={book.id}>
-						<div className="flex">
-							<div className="flex items-center mb-2">
-								<img src={book.admin.picture ? book.admin.picture : undefined} className="rounded-full h-10 w-10 my-auto bg-primary" alt="Avatar Headshot" />
-								<div className="ml-3">
-									<h2 className="font-bold text-sm">{book.admin.username}</h2>
-									<p className={`font-semibold ${book.type == "promotion" ? "text-green-500" : "text-red-500"} text-sm`}>{book.type == "fire" ? "Fired" : capitalize(book.type)}</p>
+			<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+				<div className="p-6">
+					<h2 className="text-lg font-medium text-gray-900 mb-4">History</h2>
+					{userBook.length === 0 ? (
+						<div className="text-center py-12">
+							<div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
+								<div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+									<IconClipboardList className="w-8 h-8 text-primary" />
 								</div>
+								<h3 className="text-lg font-medium text-gray-900 mb-1">No Notes</h3>
+								<p className="text-sm text-gray-500 mb-4">No notes have been added to this user's book yet</p>
 							</div>
 						</div>
-						<p className="font-medium">{book.reason}</p>
-					</div>
-				))}
+					) : (
+						<div className="space-y-4">
+							{userBook.map((entry: any) => (
+								<div key={entry.id} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+									<div className="flex-shrink-0">
+										{getIcon(entry.type)}
+									</div>
+									<div className="flex-grow">
+										<div className="flex items-center justify-between mb-1">
+											<p className="text-sm font-medium text-gray-900">
+												{entry.admin.name}
+											</p>
+											<time className="text-xs text-gray-500">
+												{moment(entry.createdAt).format("DD MMM YYYY")}
+											</time>
+										</div>
+										<p className="text-sm text-gray-600">{entry.reason}</p>
+									</div>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

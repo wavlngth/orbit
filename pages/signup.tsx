@@ -80,7 +80,7 @@ const SignUp: NextPage = ({ }) => {
 				<div>
 					<p className="font-bold text-2xl ">Create an account</p>
 					<p className="text-md text-gray-500 dark:text-gray-200">
-						Create a new account for this group's Tovy
+						Create a new account for this group's Orbit
 					</p>
 					<FormProvider {...methods}>
 						<form className="mb-8 mt-2" onSubmit={handleSubmit(nextSlide)}>
@@ -100,10 +100,10 @@ const SignUp: NextPage = ({ }) => {
 				</div>
 				<div>
 					<p className="font-bold text-2xl" id="2">
-						Make your Tovy account
+						Make your Orbit account
 					</p>
 					<p className="text-md text-gray-500 dark:text-gray-200">
-						You need to create a Tovy account to continue
+						You need to create a Orbit account to continue
 					</p>
 					<FormProvider {...signupform}>
 						<form className="mb-8 mt-2" onSubmit={handleSubmit(createAccount)}>
@@ -124,9 +124,6 @@ const SignUp: NextPage = ({ }) => {
 						>
 							Continue
 						</Button>
-					</div>
-					<div className="w-full flex">
-						<a className="pt-4 mx-auto  text-gray-400 hover:underline cursor-pointer hover:text-blue-600 transition " href="https://tovyblox.xyz"> © Tovy 2022 </a>
 					</div>
 				</div>
 				<div>
@@ -160,9 +157,6 @@ const SignUp: NextPage = ({ }) => {
 						>
 							Verify
 						</button>
-					</div>
-					<div className="w-full flex">
-						<a className="pt-4 mx-auto  text-gray-400 hover:underline cursor-pointer hover:text-blue-600 transition " href="https://tovyblox.xyz"> © Tovy 2022 </a>
 					</div>
 				</div>
 			</Slider>

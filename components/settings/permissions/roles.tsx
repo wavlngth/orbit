@@ -1,8 +1,6 @@
-import React, { FC, ReactNode, useEffect } from "react";
-import { twMerge } from "tailwind-merge";
-import { Tab, Disclosure, Transition } from "@headlessui/react";
-import { GetServerSideProps, NextPage } from "next";
-import { IconChevronDown } from "@tabler/icons";
+import React, { FC } from "react";
+import { Disclosure, Transition } from "@headlessui/react";
+import { IconChevronDown, IconPlus, IconRefresh, IconTrash } from "@tabler/icons";
 import Btn from "@/components/button";
 import { workspacestate } from "@/state";
 import { Role } from "noblox.js";
@@ -10,20 +8,16 @@ import { role } from "@/utils/database";
 import { useRecoilState } from "recoil";
 import { useRouter } from "next/router";
 import toast, { Toaster } from 'react-hot-toast';
-
 import axios from "axios";
+import clsx from 'clsx';
+
 type Props = {
 	setRoles: React.Dispatch<React.SetStateAction<role[]>>;
 	roles: role[];
 	grouproles: Role[];
 };
 
-type form = {
-	permissions: string[];
-	name: string;
-};
-
-const Button: FC<Props> = ({ roles, setRoles, grouproles }) => {
+const RolesManager: FC<Props> = ({ roles, setRoles, grouproles }) => {
 	const [workspace] = useRecoilState(workspacestate);
 	const router = useRouter();
 	const permissions = {
@@ -45,6 +39,7 @@ const Button: FC<Props> = ({ roles, setRoles, grouproles }) => {
 		);
 		if (res.status === 200) {
 			setRoles([...roles, res.data.role]);
+			toast.success('New role created');
 		}
 	};
 
@@ -84,17 +79,16 @@ const Button: FC<Props> = ({ roles, setRoles, grouproles }) => {
 		if (index === null) return;
 		const rroles = Object.assign(([] as typeof roles), roles);
 		if (rroles[index].groupRoles.includes(role.id)) {
-			//GET RID OF ROLE
 			rroles[index].groupRoles = rroles[index].groupRoles.filter((r) => r !== role.id);
 		} else {
 			rroles[index].groupRoles.push(role.id);
-		};
-		setRoles(rroles)
+		}
+		setRoles(rroles);
 		await axios.post(
 			`/api/workspace/${workspace.groupId}/settings/roles/${id}/update`,
 			{ name: rroles[index].name, permissions: rroles[index].permissions, groupRoles: rroles[index].groupRoles }
 		);
-	}
+	};
 
 	const checkRoles = async () => {
 		const res = axios.post(
@@ -102,7 +96,7 @@ const Button: FC<Props> = ({ roles, setRoles, grouproles }) => {
 		);
 		toast.promise(res, {
 			loading: 'Checking roles...',
-			success: 'Roles updated! (you may need to refresh the page to see the updated user list)',
+			success: 'Roles updated!',
 			error: 'Error updating roles'
 		});
 	};
@@ -118,178 +112,136 @@ const Button: FC<Props> = ({ roles, setRoles, grouproles }) => {
 			success: 'Role deleted!',
 			error: 'Error deleting role'
 		});
-	}
-
+	};
 
 	const aroledoesincludegrouprole = (id: string, role: Role) => {
 		const rs = roles.filter((role: any) => role.id !== id);
-		//loop through roles and check if the role includes the group role
 		for (let i = 0; i < rs.length; i++) {
 			if (rs[i].groupRoles.includes(role.id)) {
 				return true;
 			}
 		}
 		return false;
-	}
-
-	//rerender when roles change
+	};
 
 	return (
-		<>
-		<Disclosure
-			as="div"
-			className="bg-white p-4 rounded-lg mt-2 transform-all z-10"
-		>
-			{({ open }) => (
-				<>
-					<Disclosure.Button
+		<div className="space-y-4 mt-4">
+			<div className="flex items-center justify-between">
+				<h3 className="text-lg font-medium text-gray-900 dark:text-white">Roles</h3>
+				<div className="flex items-center space-x-3">
+					<button
+						onClick={newRole}
+						className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
+					>
+						<IconPlus size={16} className="mr-1.5" />
+						Add Role
+					</button>
+					<button
+						onClick={checkRoles}
+						className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+					>
+						<IconRefresh size={16} className="mr-1.5" />
+						Sync Group Roles
+					</button>
+				</div>
+			</div>
+
+			<div className="space-y-3">
+				{roles.map((role) => (
+					<Disclosure
 						as="div"
-						className="text-lg cursor-pointer flex "
+						key={role.id}
+						className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
 					>
-						Roles
-						<IconChevronDown
-							color="#AAAAAA"
-							className={`ml-auto my-auto transition ${open ? "rotate-180" : ""
-								}`}
-							size={22}
-						/>
-					</Disclosure.Button>
-
-					<Transition
-						enter="transition-all duration-100 ease-out"
-						enterFrom="transform opacity-0 -translate-y-1"
-						enterTo="transform opacity-100 translate-y-0"
-						leave="transition-all duration-75 ease-out"
-						leaveFrom="transform translate-y-0"
-						leaveTo="transform opacity-0 -translate-y-1"
-					>
-						<Disclosure.Panel as="div" className="pt-3 z-10 relative">
-							<div className="flex">
-								<Btn compact classoverride="ml-0" onPress={newRole}>
-									Add Role
-								</Btn>
-								<Btn compact classoverride="" onPress={checkRoles}>
-									Check group roles
-								</Btn>
-							</div>
-							{roles.map((role) => (
-								<Disclosure
-									as="div"
-									key={role.id}
-									className="bg-white rounded-lg mt-2 transform-all outline outline-gray-300 outline-[1.75px]"
-									tabIndex={0}
+						{({ open }) => (
+							<>
+								<Disclosure.Button
+									className="w-full px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
 								>
-									{({ open }) => (
-										<>
-											<Disclosure.Button
-												as="button"
-												className="text-lg w-full p-4 cursor-pointer flex focus-visible:bg-gray-300 rounded focus:outline-none"
-											>
-												{role.name}
-												<IconChevronDown
-													color="#AAAAAA"
-													className={`ml-auto my-auto transition ${open ? "rotate-180" : ""
-														}`}
-													size={22}
+									<div className="flex items-center justify-between">
+										<span className="text-sm font-medium text-gray-900 dark:text-white">{role.name}</span>
+										<IconChevronDown
+											className={clsx(
+												"w-5 h-5 text-gray-500 transition-transform",
+												open ? "transform rotate-180" : ""
+											)}
+										/>
+									</div>
+								</Disclosure.Button>
+
+								<Transition
+									enter="transition duration-100 ease-out"
+									enterFrom="transform scale-95 opacity-0"
+									enterTo="transform scale-100 opacity-100"
+									leave="transition duration-75 ease-out"
+									leaveFrom="transform scale-100 opacity-100"
+									leaveTo="transform scale-95 opacity-0"
+								>
+									<Disclosure.Panel className="px-4 pb-4">
+										<div className="space-y-4">
+											<div>
+												<input
+													type="text"
+													placeholder="Role name"
+													value={role.name}
+													onChange={(e) => updateRole(e.target.value, role.id)}
+													className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
 												/>
-											</Disclosure.Button>
+											</div>
 
-											<Transition
-												enter="transition-all duration-100 ease-out"
-												enterFrom="transform opacity-0 -translate-y-1"
-												enterTo="transform opacity-100 translate-y-0"
-												leave="transition-all duration-75 ease-out"
-												leaveFrom="transform translate-y-0"
-												leaveTo="transform opacity-0 -translate-y-1"
+											<div>
+												<h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Permissions</h4>
+												<div className="space-y-2">
+													{Object.entries(permissions).map(([label, value]) => (
+														<label key={value} className="flex items-center space-x-2">
+															<input
+																type="checkbox"
+																checked={role.permissions.includes(value)}
+																onChange={() => togglePermission(role.id, value)}
+																className="w-4 h-4 rounded text-primary border-gray-300 dark:border-gray-600 focus:ring-primary/50"
+															/>
+															<span className="text-sm text-gray-700 dark:text-gray-200">{label}</span>
+														</label>
+													))}
+												</div>
+											</div>
+
+											<div>
+												<h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Group-synced roles</h4>
+												<div className="space-y-2">
+													{grouproles.map((groupRole) => (
+														<label key={groupRole.id} className="flex items-center space-x-2">
+															<input
+																type="checkbox"
+																checked={role.groupRoles.includes(groupRole.id)}
+																onChange={() => toggleGroupRole(role.id, groupRole)}
+																disabled={aroledoesincludegrouprole(role.id, groupRole)}
+																className="w-4 h-4 rounded text-primary border-gray-300 dark:border-gray-600 focus:ring-primary/50 disabled:opacity-50"
+															/>
+															<span className="text-sm text-gray-700 dark:text-gray-200">{groupRole.name}</span>
+														</label>
+													))}
+												</div>
+											</div>
+
+											<button
+												onClick={() => deleteRole(role.id)}
+												className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600 transition-colors"
 											>
-												<Disclosure.Panel
-													as="div"
-													className="px-4 pb-3 flex w-full"
-												>
-													<div>
-														<input
-															placeholder="Role name"
-															value={role.name}
-															onChange={(e) =>
-																updateRole(e.target.value, role.id)
-															}
-															className="text-gray-600 dark:text-white rounded-lg p-2 border-2 mb-2 dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 "
-														/>
-														<p className="text-md font-semibold"> Permissions </p>
-														{Object.keys(permissions).map(
-															(permission: string, index) => (
-																<div
-																	key={index}
-																	className="flex items-center"
-																>
-																	<input
-																		type="checkbox"
-																		checked={role.permissions.includes(
-																			permissions[
-																			permission as keyof typeof permissions
-																			]
-																		)}
-																		onChange={() =>
-																			togglePermission(
-																				role.id,
-																				permissions[
-																				permission as keyof typeof permissions
-																				]
-																			)
-																		}
-																		className="rounded-sm mr-2 w-4 h-4 transform transition text-primary bg-slate-100 border-gray-300 hover:bg-gray-300 focus-visible:bg-gray-300 checked:hover:bg-primary/75 checked:focus-visible:bg-primary/75 focus:ring-0"
-																	/>
-																	<p>{permission}</p>
-																</div>
-															)
-														)}
-														<p className="text-md font-semibold"> Group-synced roles </p>
-														{grouproles.map(
-															(r, index) => (
-																<div
-																	key={index}
-																	className="flex items-center"
-																>
-																	<input
-																		type="checkbox"
-																		checked={role.groupRoles.includes(
-																			r.id
-																		)}
-																		onChange={() =>
-																			toggleGroupRole(
-																				role.id,
-																				r
-																			)
-																		}
-																		disabled={aroledoesincludegrouprole(
-																			role.id,
-																			r
-																		)}
-																		className="rounded-sm mr-2 w-4 h-4 transform transition text-primary bg-slate-100 border-gray-300 hover:bg-gray-300 focus-visible:bg-gray-300 checked:hover:bg-primary/75 checked:focus-visible:bg-primary/75 disabled:bg-gray-300 focus:ring-0"
-																	/>
-																	<p>{r.name}</p>
-																</div>
-															)
-														)}
-														<Btn classoverride="hover:bg-red-300 focus-visible:bg-red-300 bg-red-500 mt-3" compact onClick={() => deleteRole(role.id)} > Delete </Btn>
-													</div>
-												</Disclosure.Panel>
-											</Transition>
-										</>
-									)}
-								</Disclosure>
-							))}
-						</Disclosure.Panel>
-					</Transition>
-				</>
-			)}
-					
-
-		</Disclosure>
-		<Toaster position="bottom-center" />
-		</>
-
+												<IconTrash size={16} className="mr-1.5" />
+												Delete Role
+											</button>
+										</div>
+									</Disclosure.Panel>
+								</Transition>
+							</>
+						)}
+					</Disclosure>
+				))}
+			</div>
+			<Toaster position="bottom-center" />
+		</div>
 	);
 };
 
-export default Button;
+export default RolesManager;

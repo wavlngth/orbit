@@ -7,10 +7,9 @@ import moment from "moment";
 import Button from "@/components/button";
 import type { wallPost, user } from "@/utils/database";
 import { useRouter } from "next/router";
-import { IconChevronRight } from '@tabler/icons'
+import { IconChevronRight, IconMessage } from '@tabler/icons'
 
-
-const Color: React.FC = () => {
+const Wall: React.FC = () => {
 	const [posts, setPosts] = useState<(wallPost & {
 		author: user
 	})[]>([]);
@@ -23,49 +22,74 @@ const Color: React.FC = () => {
 		})
 	}, []);
 
-	const goToGuide = (id: string) => {
-		router.push(`/workspace/${router.query.id}/docs/${id}`)
-	}
-
 	const goToWall = () => {
 		router.push(`/workspace/${router.query.id}/wall`)
 	}
 
 	return (
-		<div className="flex flex-col gap-3 mt-5">
-			<div className="flex flex-col gap-3">
-				{posts.length < 1 && (
-					<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-						<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-						<p className="text-center text-xl font-semibold">The wall is empty.</p>
+		<div className="flex flex-col gap-4">
+			{posts.length === 0 ? (
+				<div className="flex flex-col items-center justify-center py-8 text-center">
+					<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+						<IconMessage className="w-8 h-8 text-primary" />
 					</div>
-				)}
-				{posts.slice(0, 2).map((post) => (
-					<div className="bg-white p-4 rounded-md" key={post.id}>
-						<div className="flex">
-							<img alt="avatar headshot" src={String(post.author.picture)} className="rounded-full h-12 w-12 my-auto bg-primary" />
-							<p className="font-semibold ml-2 break-normal leading-5 my-auto">
-								{post.author.username!}
-								<br />
-								<span className="text-gray-500/75 font-normal"> {moment(post.createdAt).format("DD MMM")} </span>
-							</p>
-						</div>
-						<p className="pt-2 font-medium">{post.content}</p>
-						{post.image && (
-							<div className="mt-3">
+					<p className="text-lg font-medium text-gray-900 dark:text-white mb-1">No posts yet</p>
+					<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Be the first to share something with your workspace</p>
+					<button
+						onClick={goToWall}
+						className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+					>
+						View Wall
+						<IconChevronRight className="w-4 h-4" />
+					</button>
+				</div>
+			) : (
+				<div className="flex flex-col gap-4">
+					{posts.slice(0, 2).map((post) => (
+						<div 
+							key={post.id} 
+							className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+						>
+							<div className="flex items-start gap-3">
 								<img 
-									src={post.image} 
-									alt="Post image" 
-									className="max-h-64 rounded-lg object-contain"
+									alt={`${post.author.username}'s avatar`} 
+									src={String(post.author.picture)} 
+									className="rounded-lg h-10 w-10 bg-primary object-cover" 
 								/>
+								<div className="flex-1 min-w-0">
+									<div className="flex items-center gap-2">
+										<p className="font-medium text-gray-900 dark:text-white truncate">
+											{post.author.username}
+										</p>
+										<span className="text-sm text-gray-500 dark:text-gray-400">
+											{moment(post.createdAt).format("MMM D")}
+										</span>
+									</div>
+									<p className="mt-1 text-gray-700 dark:text-gray-300">{post.content}</p>
+									{post.image && (
+										<div className="mt-3">
+											<img 
+												src={post.image} 
+												alt="Post image" 
+												className="rounded-lg max-h-48 w-full object-cover"
+											/>
+										</div>
+									)}
+								</div>
 							</div>
-						)}
-					</div>
-				))}
-			</div>
+						</div>
+					))}
+					<button
+						onClick={goToWall}
+						className="inline-flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+					>
+						View all posts
+						<IconChevronRight className="w-4 h-4" />
+					</button>
+				</div>
+			)}
 		</div>
 	)
 };
 
-
-export default Color;
+export default Wall;

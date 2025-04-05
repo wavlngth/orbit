@@ -19,13 +19,13 @@ local config = {
 	url = "<url>",
 	auth = "<apikey>",
 
-	bansEnabled = true, --// Set to false if you do not want Tovy to handle bans (This will use less HTTP requests)
+	bansEnabled = true, --// Set to false if you do not want Orbit to handle bans (This will use less HTTP requests)
 
 	cooldownPeriod = 30, --// The interval (seconds) between retrying failed HTTP requests
 
-	rankChecking = false, --// Enables rank checking on player join/leave to ensure only relevant data is sent to Tovy
+	rankChecking = false, --// Enables rank checking on player join/leave to ensure only relevant data is sent to Orbit
 	groupId = 2700627, --// The group ID to perform activity tracking for
-	minTrackedRank = 0	 --// The minimum rank ID to perform activity tracking for (This value is retrieved from your Tovy instance on game launch)
+	minTrackedRank = 0	 --// The minimum rank ID to perform activity tracking for (This value is retrieved from your Orbit instance on game launch)
 }
 
 local HttpQueue = Http.HttpQueue.new({
@@ -35,7 +35,7 @@ local HttpQueue = Http.HttpQueue.new({
 })
 
 --[[
-	Determines if a user should or should not be tracked based on the Tovy configuration
+	Determines if a user should or should not be tracked based on the Orbit configuration
 ]]--
 local function isUserTracked(player)
 	if not config.rankChecking then
@@ -93,11 +93,11 @@ local function endSession(player)
 end
 
 --[[
-	Checks whether or not a player is banned through Tovy (if enabled)
+	Checks whether or not a player is banned through Orbit (if enabled)
 ]]--
 
 --[[
-	Retrieve Tovy tracking configuration
+	Retrieve Orbit tracking configuration
 ]]--
 --[[while true do
 	local success, data = pcall(function()
@@ -114,7 +114,7 @@ end
 		break
 	else
 		-- On failure, wait 2 seconds and try again
-		print("Failed to retrieve Tovy configuration data:", tostring(data))
+		print("Failed to retrieve Orbit configuration data:", tostring(data))
 		task.wait(2)
 	end
 end

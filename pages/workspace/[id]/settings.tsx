@@ -1,6 +1,6 @@
 import type { pageWithLayout } from "@/layoutTypes";
 import { loginState } from "@/state";
-import { IconChevronRight, IconHome, IconLock } from "@tabler/icons";
+import { IconChevronRight, IconHome, IconLock, IconFlag } from "@tabler/icons";
 import Permissions from "@/components/settings/permissions";
 import Workspace from "@/layouts/workspace";
 import { useRecoilState } from "recoil";
@@ -87,7 +87,17 @@ const SECTIONS = {
 		name: 'General',
 		icon: IconHome,
 		description: 'Basic workspace settings and preferences',
-		components: Object.entries(All).map(([key, Component]) => ({
+		components: Object.entries(All).filter(([key]) => key === 'Color' || key === 'home').map(([key, Component]) => ({
+			key,
+			component: Component,
+			title: Component.title
+		}))
+	},
+	features: {
+		name: 'Feature Flags',
+		icon: IconFlag,
+		description: 'Enable or disable workspace features',
+		components: Object.entries(All).filter(([key]) => key === 'Guide' || key === 'Sessions').map(([key, Component]) => ({
 			key,
 			component: Component,
 			title: Component.title
@@ -108,19 +118,19 @@ const Settings: pageWithLayout<Props> = ({ users, roles, grouproles }) => {
 	const renderContent = () => {
 		if (activeSection === 'permissions') {
 			return (
-				<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+				<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
 					<Permissions users={users} roles={roles} grouproles={grouproles}/>
 				</div>
 			);
 		}
 
-		return SECTIONS.general.components.map(({ component: Component, title }, index) => (
+		return SECTIONS[activeSection as keyof typeof SECTIONS].components.map(({ component: Component, title }, index) => (
 			<div 
 				key={index} 
-				className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-4 last:mb-0"
+				className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-4 last:mb-0"
 			>
 				<div className="mb-4">
-					<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
 						{title}
 					</h3>
 					<Component triggerToast={toast} />
@@ -130,22 +140,22 @@ const Settings: pageWithLayout<Props> = ({ users, roles, grouproles }) => {
 	};
 
 	return (
-		<div className="pagePadding">
-			<div className="max-w-6xl mx-auto">
+		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+			<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+				<div className="mb-6">
+					<h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
 						Settings
 					</h1>
-					<p className="text-gray-500 mt-1">
+					<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
 						Manage your workspace preferences and configurations
 					</p>
 				</div>
 
-				<div className="flex flex-col md:flex-row gap-6">
+				<div className="flex flex-col lg:flex-row gap-4">
 					{/* Navigation Sidebar */}
-					<div className="w-full md:w-64 flex-shrink-0">
-						<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+					<div className="w-full lg:w-64 flex-shrink-0">
+						<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3">
 							<nav className="space-y-1">
 								{Object.entries(SECTIONS).map(([key, section]) => {
 									const Icon = section.icon;
@@ -160,10 +170,10 @@ const Settings: pageWithLayout<Props> = ({ users, roles, grouproles }) => {
 													: 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
 											)}
 										>
-											<Icon size={20} />
+											<Icon size={18} />
 											<span>{section.name}</span>
 											<IconChevronRight
-												size={18}
+												size={16}
 												className={clsx(
 													'ml-auto transition-transform',
 													activeSection === key ? 'rotate-90' : ''
@@ -178,11 +188,11 @@ const Settings: pageWithLayout<Props> = ({ users, roles, grouproles }) => {
 
 					{/* Main Content */}
 					<div className="flex-1">
-						<div className="mb-6">
-							<h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+						<div className="mb-4">
+							<h2 className="text-lg font-medium text-gray-900 dark:text-white">
 								{SECTIONS[activeSection as keyof typeof SECTIONS].name}
 							</h2>
-							<p className="text-gray-500 mt-1">
+							<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
 								{SECTIONS[activeSection as keyof typeof SECTIONS].description}
 							</p>
 						</div>

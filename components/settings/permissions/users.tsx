@@ -1,17 +1,14 @@
-import React, { FC, ReactNode, useEffect } from "react";
-import { twMerge } from "tailwind-merge";
-import { Tab, Disclosure, Transition, Listbox } from "@headlessui/react";
-import { GetServerSideProps, NextPage } from "next";
-import { IconCheck, IconChevronDown } from "@tabler/icons";
-import Btn from "@/components/button";
+import React, { FC } from "react";
+import { Disclosure, Transition, Listbox } from "@headlessui/react";
+import { IconCheck, IconChevronDown, IconPlus, IconUser } from "@tabler/icons";
 import { workspacestate } from "@/state";
 import { useForm, FormProvider } from "react-hook-form";
 import { role } from "@/utils/database";
-import roles from "@/components/settings/permissions/roles";
 import { useRecoilState } from "recoil";
 import Input from "@/components/input";
 import axios from "axios";
-import { format } from "node:path/win32";
+import clsx from 'clsx';
+
 type Props = {
 	users: any[];
 	roles: role[];
@@ -27,14 +24,11 @@ const Button: FC<Props> = (props) => {
 	const userForm = useForm<form>();
 	const { roles } = props;
 
-	//set users role to the role with the same role id passed 
 	const updateRole = async (id: number, roleid: string) => {
 		const user = users.findIndex((user: any) => user.userid === id);
-		console.log(id, roleid)
-		const usi = users
 		if (!user) return;
+		const usi = users;
 		const role = roles.find((role: any) => role.id === roleid);
-		console.log(role)
 		if (!role) return;
 		usi[user].roles = [role];
 		setUsers([...usi]);
@@ -59,173 +53,161 @@ const Button: FC<Props> = (props) => {
 		});
 		if (!user) return;
 		userForm.clearErrors()
-
 		setUsers([...users, user.data.user]);
 	};
 
-
-
-
-
-
 	return (
-		<Disclosure
-			as="div"
-			className="bg-white p-4 rounded-lg mt-2 transform-all relative z-50"
-		>
-			{({ open }) => (
-				<>
-					<Disclosure.Button
-						as="div"
-						className="text-lg cursor-pointer flex "
-					>
-						Users
-						<IconChevronDown
-							color="#AAAAAA"
-							className={`ml-auto my-auto transition ${open ? "rotate-180" : ""
-								}`}
-							size={22}
-						/>
-					</Disclosure.Button>
-
-					<Transition
-						enter="transition-all duration-100 ease-out"
-						enterFrom="transform opacity-0 -translate-y-1"
-						enterTo="transform opacity-100 translate-y-0"
-						leave="transition-all duration-75 ease-out"
-						leaveFrom="transform translate-y-0"
-						leaveTo="transform opacity-0 -translate-y-1"
-					>
-						<Disclosure.Panel as="div" className="pt-3">
-							<FormProvider {...userForm}>
-								<Input {...userForm.register("username")} label="Username" />
-							</FormProvider>
-
-							<Btn compact onPress={() => addUser()}>
+		<div className="space-y-4">
+			<div className="flex items-center justify-between">
+				<h3 className="text-lg font-medium text-gray-900 dark:text-white">Users</h3>
+				<div className="flex items-center space-x-3">
+					<FormProvider {...userForm}>
+						<div className="flex items-center space-x-2">
+							<Input
+								{...userForm.register("username")}
+								label=""
+								placeholder="Enter username"
+								classoverride="w-48"
+							/>
+							<button
+								onClick={addUser}
+								className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
+							>
+								<IconPlus size={16} className="mr-1.5" />
 								Add User
-							</Btn>
+							</button>
+						</div>
+					</FormProvider>
+				</div>
+			</div>
 
-							{roles.map((role, index) => (
-								<Disclosure
-									as="div"
-									key={role.id}
-									className="bg-white rounded-lg mt-2 transform-all outline outline-gray-300 outline-[1.75px]"
-									tabIndex={0}
+			<div className="space-y-3">
+				{roles.map((role) => (
+					<Disclosure
+						as="div"
+						key={role.id}
+						className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+					>
+						{({ open }) => (
+							<>
+								<Disclosure.Button
+									className="w-full px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
 								>
-									{({ open }) => (
-										<>
-											<Disclosure.Button
-												as="button"
-												className="text-lg w-full p-4 cursor-pointer flex focus-visible:bg-gray-300 rounded focus:outline-none"
-											>
-												{role.name}
-												<IconChevronDown
-													color="#AAAAAA"
-													className={`ml-auto my-auto transition ${open ? "rotate-180" : ""
-														}`}
-													size={22}
-												/>
-											</Disclosure.Button>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center space-x-2">
+											<span className="text-sm font-medium text-gray-900 dark:text-white">{role.name}</span>
+											<span className="text-xs text-gray-500 dark:text-gray-400">
+												({users.filter((user: any) => user.roles[0].id === role.id).length} users)
+											</span>
+										</div>
+										<IconChevronDown
+											className={clsx(
+												"w-5 h-5 text-gray-500 transition-transform",
+												open ? "transform rotate-180" : ""
+											)}
+										/>
+									</div>
+								</Disclosure.Button>
 
-											<Transition
-												enter="transition-all duration-100 ease-out"
-												enterFrom="transform opacity-0 -translate-y-1"
-												enterTo="transform opacity-100 translate-y-0"
-												leave="transition-all duration-75 ease-out"
-												leaveFrom="transform translate-y-0"
-												leaveTo="transform opacity-0 -translate-y-1"
-											>
-												<Disclosure.Panel
-													as="div"
-													className="px-4 pb-4 -mt-3    w-full"
-												>
+								<Transition
+									enter="transition duration-100 ease-out"
+									enterFrom="transform scale-95 opacity-0"
+									enterTo="transform scale-100 opacity-100"
+									leave="transition duration-75 ease-out"
+									leaveFrom="transform scale-100 opacity-100"
+									leaveTo="transform scale-95 opacity-0"
+								>
+									<Disclosure.Panel className="px-4 pb-4">
+										{users.filter((user: any) => user.roles[0].id === role.id).length > 100 ? (
+											<p className="text-sm text-gray-500 dark:text-gray-400">
+												Too many users to display (max 100)
+											</p>
+										) : (
+											<div className="space-y-2">
+												{users.filter((user: any) => user.roles[0].id === role.id).map((user: any) => (
+													<div
+														key={user.userid}
+														className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+													>
+														<div className="flex items-center space-x-3">
+															<img
+																src={user.thumbnail}
+																alt={user.displayName}
+																className="w-10 h-10 rounded-full"
+															/>
+															<div>
+																<p className="text-sm font-medium text-gray-900 dark:text-white">
+																	{user.displayName}
+																</p>
+																<p className="text-xs text-gray-500 dark:text-gray-400">
+																	@{user.username}
+																</p>
+															</div>
+														</div>
 
-													{users.filter((user: any) => user.roles[0].id === role.id).length > 100 ? (
-														<p className="text-gray-500 text-sm">
-															Tovy cant display more than 100 users
-														</p>
-													) : (
-														<>
-															{users.filter((user: any) => user.roles[0].id === role.id).map((user: any, index: number) => (
-																<div key={user.userid} className="w-auto mt-3 p-4 outline-gray-300 outline outline-[1.75px] rounded-lg flex">
-																	<img src={user.thumbnail} className="rounded-full bg-primary h-10 my-auto" />
-																	<p className="my-auto font-semibold ml-2 leading-5"> {user.displayName} <br />
-																		<span className="font-light text-gray-400">
-																			@{user.username}
-																		</span>
-																	</p>
-																	<Listbox value={user.roles[0].id} onChange={(value) => updateRole(user.userid, value)}>
-																		<Listbox.Button className="ml-auto bg-gray-100 px-3 rounded-md font-medium text-gray-600 flex"><p className="my-auto">  {user.roles[0].name}</p> <IconChevronDown size={20} className="text-gray-500 my-auto"> </IconChevronDown> </Listbox.Button>
-																		<Listbox.Options className="absolute right-0 overflow-clip z-40 mt-12 mr-4 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus-visible:outline-none">
-																			<div className="">
-																				{workspace.roles.map((role, index) => (
-																					<Listbox.Option
-																						className={({ active }) =>
-																							`${active ? 'text-white bg-indigo-600' : 'text-gray-900'} relative cursor-pointer select-none py-2 pl-3 pr-9`
-																						}
-																						key={index}
-																						value={role.id}
-																					>
-																						{({ selected, active }) => (
-																							<>
-																								<div className="flex items-center">
-																									<span
-																										className={`${selected ? 'font-semibold' : 'font-normal'} ml-3 block truncate`}
-																									>
-																										{role.name}
-																									</span>
-																								</div>
-
-																								{selected ? (
-																									<span
-																										className={`${active ? 'text-white' : 'text-indigo-600'}
-																absolute inset-y-0 right-0 flex items-center pr-4`
-																										}
-																									>
-																										<IconCheck className="h-5 w-5" aria-hidden="true" />
-																									</span>
-																								) : null}
-																							</>
-																						)}
-																					</Listbox.Option>
-																				))}
-																			</div>
-																			<div className="h-[1px] rounded-xl w-full px-3 bg-gray-300" />
-																			<button
-																				onClick={() => removeUser(user.userid)}
-																				className={
-																					` hover:text-white hover:bg-indigo-600 w-full relative cursor-pointer select-none py-2 pl-3 pr-9`
+														<Listbox
+															value={user.roles[0].id}
+															onChange={(value) => updateRole(user.userid, value)}
+														>
+															<div className="relative">
+																<Listbox.Button className="relative w-40 py-2 pl-3 pr-10 text-left bg-white dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50">
+																	<span className="block truncate text-sm">
+																		{user.roles[0].name}
+																	</span>
+																	<span className="absolute inset-y-0 right-0 flex items-center pr-2">
+																		<IconChevronDown className="w-5 h-5 text-gray-400" />
+																	</span>
+																</Listbox.Button>
+																<Transition
+																	as={React.Fragment}
+																	leave="transition ease-in duration-100"
+																	leaveFrom="opacity-100"
+																	leaveTo="opacity-0"
+																>
+																	<Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none">
+																		{workspace.roles.map((role) => (
+																			<Listbox.Option
+																				key={role.id}
+																				value={role.id}
+																				className={({ active }) =>
+																					clsx(
+																						"relative cursor-pointer select-none py-2 pl-10 pr-4",
+																						active
+																							? "bg-primary/10 text-primary"
+																							: "text-gray-900 dark:text-gray-100"
+																					)
 																				}
 																			>
-																				<div className="flex items-center">
-																					<span
-																						className={`font-normal ml-3 block truncate`}
-																					>
-																						Delete
-																					</span>
-																				</div>
-																			</button>
-
-																		</Listbox.Options>
-																	</Listbox>
-
-
-																</div>
-															))}
-														</>
-													)}
-
-												</Disclosure.Panel>
-											</Transition>
-										</>
-									)}
-								</Disclosure>
-							))}
-						</Disclosure.Panel>
-					</Transition>
-				</>
-			)}
-		</Disclosure>
+																				{({ selected }) => (
+																					<>
+																						<span className="block truncate text-sm">
+																							{role.name}
+																						</span>
+																						{selected ? (
+																							<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+																								<IconCheck className="w-5 h-5" />
+																							</span>
+																						) : null}
+																					</>
+																				)}
+																			</Listbox.Option>
+																		))}
+																	</Listbox.Options>
+																</Transition>
+															</div>
+														</Listbox>
+													</div>
+												))}
+											</div>
+										)}
+									</Disclosure.Panel>
+								</Transition>
+							</>
+						)}
+					</Disclosure>
+				))}
+			</div>
+		</div>
 	);
 };
 

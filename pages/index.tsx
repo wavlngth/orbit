@@ -8,11 +8,10 @@ import { useState, Fragment } from "react";
 import Button from "@/components/button";
 import axios from "axios";
 import Input from "@/components/input";
-import Tooltip from "@/components/tooltip";
-import { Toast, Toaster } from "react-hot-toast";
 import { useForm, FormProvider } from "react-hook-form";
 import { useRecoilState } from "recoil";
 import { toast } from "react-hot-toast";
+import { IconPlus, IconRefresh, IconChevronRight, IconBuildingSkyscraper } from "@tabler/icons";
 
 const Home: NextPage = () => {
 	const [login, setLogin] = useRecoilState(loginState);
@@ -20,6 +19,7 @@ const Home: NextPage = () => {
 	const methods = useForm();
 	const router = useRouter();
 	const [isOpen, setIsOpen] = useState(false);
+	
 	const gotoWorkspace = (id: number) => {
 		router.push(`/workspace/${id}`);
 	};
@@ -46,8 +46,6 @@ const Home: NextPage = () => {
 			}
 		});
 
-		
-
 		if (request) {
 			toast.success("Workspace created!", {
 				id: t
@@ -67,67 +65,77 @@ const Home: NextPage = () => {
 		toast.promise(request, {
 			loading: 'Checking roles...',
 			success: 'Roles checked!',
-			error: 'An error occured'
+			error: 'An error occurred'
 		})
 	}
 
 	return (
 		<div>
 			<Head>
-				<title>Orbit</title>
+				<title>Orbit - Workspaces</title>
+				<meta name="description" content="Manage your Roblox workspaces with Orbit" />
 			</Head>
 
-			<div className="h-screen bg-gray-100 dark:bg-gray-700">
+			<div className="min-h-screen bg-gray-50 dark:bg-gray-800">
 				<Topbar />
-				<div className="lg:px-48 md:px-32 sm:px-20 xs:px-9 px-8 ">
-					<div className=" pt-10 flex">
-						<p className="my-auto text-2xl font-bold"> Select a Workspace </p>
-						<div className="ml-auto flex gap-2">
-							<Button  onClick={() => setIsOpen(true)}>
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+						<h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">Your Workspaces</h1>
+						<div className="flex space-x-3">
+							<Button 
+								onClick={() => setIsOpen(true)}
+								classoverride="flex items-center"
+							>
+								<IconPlus className="mr-2 h-5 w-5" />
 								New Workspace
 							</Button>
-							<Button onClick={() => checkRoles()}> 
-								Check roles
+							<Button 
+								onClick={() => checkRoles()}
+								classoverride="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+							>
+								<IconRefresh className="mr-2 h-5 w-5" />
+								Check Roles
 							</Button>
 						</div>
 					</div>
-					{login.workspaces && !!login.workspaces.length && <div className="grid grid-cols-1 pt-5 gap-x-9 lg:grid-cols-3 2xl:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 mt-2">
-						{login.workspaces?.map((workspace, i) => (
-							<div className=" rounded-xl h-48" key={i}>
-								<div className={`bg-gray-500 rounded-t-xl h-24 bg-no-repeat bg-center bg-cover`} style={{ backgroundImage: `url(${workspace.groupThumbnail})` }} />
-								<div className="h-14 bg-white dark:bg-gray-600 rounded-b-xl relative bottom-0 flex flex-row px-3">
-									<p className="my-auto text-xl font-bold"> {workspace.groupName} </p>
-									<Button classoverride="py-2 px-2 my-2" onPress={() => gotoWorkspace(workspace.groupId)}>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											className="icon icon-tabler icon-tabler-chevron-right"
-											width="24"
-											height="24"
-											viewBox="0 0 24 24"
-											stroke-width="2"
-											stroke="currentColor"
-											fill="none"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										>
-											<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-											<polyline points="9 6 15 12 9 18"></polyline>
-										</svg>
-									</Button>
-								</div>
-							</div>
-						))}
-					</div>
-					}
 
-					{login.workspaces && !login.workspaces.length && (
-						<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-							<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-							<p className="text-center text-xl font-semibold">No workspaces available.</p>
+					{login.workspaces && !!login.workspaces.length ? (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+							{login.workspaces?.map((workspace, i) => (
+								<div 
+									className="bg-white dark:bg-gray-700 rounded-xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer" 
+									key={i}
+									onClick={() => gotoWorkspace(workspace.groupId)}
+								>
+									<div 
+										className="h-32 bg-cover bg-center" 
+										style={{ backgroundImage: `url(${workspace.groupThumbnail})` }} 
+									/>
+									<div className="p-4 flex items-center justify-between">
+										<h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+											{workspace.groupName}
+										</h3>
+										<IconChevronRight className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+									</div>
+								</div>
+							))}
+						</div>
+					) : (
+						<div className="bg-white dark:bg-gray-700 rounded-xl shadow-sm p-8 flex flex-col items-center justify-center text-center">
+							<div className="bg-gray-100 dark:bg-gray-600 rounded-full p-4 mb-4">
+								<IconBuildingSkyscraper className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+							</div>
+							<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No workspaces available</h3>
+							<p className="text-gray-500 dark:text-gray-400 mb-6">Create a new workspace to get started</p>
+							<Button 
+								onClick={() => setIsOpen(true)}
+								classoverride="flex items-center"
+							>
+								<IconPlus className="mr-2 h-5 w-5" />
+								Create Workspace
+							</Button>
 						</div>
 					)}
-
-					<Toaster />
 
 					<Transition appear show={isOpen} as={Fragment}>
 						<Dialog as="div" className="relative z-10" onClose={() => setIsOpen(false)}>
@@ -140,7 +148,7 @@ const Home: NextPage = () => {
 								leaveFrom="opacity-100"
 								leaveTo="opacity-0"
 							>
-								<div className="fixed inset-0 bg-black bg-opacity-25" />
+								<div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
 							</Transition.Child>
 
 							<div className="fixed inset-0 overflow-y-auto">
@@ -154,25 +162,42 @@ const Home: NextPage = () => {
 										leaveFrom="opacity-100 scale-100"
 										leaveTo="opacity-0 scale-95"
 									>
-										<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+										<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
 											<Dialog.Title
-												as="p"
-												className="my-auto text-2xl font-bold"
+												as="h3"
+												className="text-2xl font-bold text-gray-900 dark:text-white"
 											>
-												New Workspace
+												Create New Workspace
 											</Dialog.Title>
-											<div className="mt-2">
+											<div className="mt-4">
 												<form onSubmit={methods.handleSubmit(createWorkspace)}>
 													<FormProvider {...methods}>
-														<Input label="Group ID" placeholder="532"  {...methods.register('groupID', { required: {value: true, message: 'This field is required'}, pattern: { value: /^[a-zA-Z0-9-.]*$/, message: 'No spaces or special charactars' }, maxLength: { value: 10, message: 'Length must be below 10 charactars`' } })} />
+														<Input 
+															label="Group ID" 
+															placeholder="Enter your Roblox group ID"  
+															{...methods.register('groupID', { 
+																required: {value: true, message: 'This field is required'},
+																pattern: { value: /^[a-zA-Z0-9-.]*$/, message: 'No spaces or special characters' }, 
+																maxLength: { value: 10, message: 'Length must be below 10 characters' } 
+															})} 
+														/>
 													</FormProvider>
 												</form>
 											</div>
 
-											<div className="mt-4 flex">
-												<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setIsOpen(false)} loading={loading}> Cancel </Button>
-												<Button classoverride="" onPress={methods.handleSubmit(createWorkspace)} loading={loading}> Create </Button>
-
+											<div className="mt-6 flex justify-end space-x-3">
+												<Button 
+													onClick={() => setIsOpen(false)} 
+													classoverride="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+												>
+													Cancel
+												</Button>
+												<Button 
+													onClick={methods.handleSubmit(createWorkspace)} 
+													loading={loading}
+												>
+													Create
+												</Button>
 											</div>
 										</Dialog.Panel>
 									</Transition.Child>

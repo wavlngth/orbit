@@ -7,15 +7,15 @@ import { useState, Fragment, useMemo } from "react";
 import randomText from "@/utils/randomText";
 import { useRecoilState } from "recoil";
 import toast, { Toaster } from 'react-hot-toast';
-import Button from "@/components/button";
 import { InferGetServerSidePropsType } from "next";
 import { withSessionSsr } from "@/lib/withSession";
 import moment from "moment";
 import { Dialog, Transition } from "@headlessui/react";
-import { withPermissionCheckSsr  } from "@/utils/permissionsManager";
+import { withPermissionCheckSsr } from "@/utils/permissionsManager";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import Input from "@/components/input";
 import prisma, { inactivityNotice } from "@/utils/database";
+import { IconCalendarTime, IconPlus, IconCheck, IconX, IconClock, IconClipboardList } from "@tabler/icons";
 
 type Form = {
 	startTime: string;
@@ -37,7 +37,6 @@ export const getServerSideProps = withPermissionCheckSsr(
 			]
 		});
 
-		
 		return {
 			props: {
 				notices: (JSON.parse(JSON.stringify(notices, (key, value) => (typeof value === 'bigint' ? value.toString() : value))) as typeof notices)
@@ -47,6 +46,7 @@ export const getServerSideProps = withPermissionCheckSsr(
 )
 
 type pageProps = InferGetServerSidePropsType<typeof getServerSideProps>
+
 const Notices: pageWithLayout<pageProps> = (props) => {
 	const router = useRouter();
 	const { id } = router.query;
@@ -88,57 +88,105 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 
 	const [isOpen, setIsOpen] = useState(false);
 
+	const getStatusIcon = (status: string) => {
+		switch (status) {
+			case "approved":
+				return <IconCheck className="w-5 h-5 text-green-500" />;
+			case "declined":
+				return <IconX className="w-5 h-5 text-red-500" />;
+			default:
+				return <IconClock className="w-5 h-5 text-yellow-500" />;
+		}
+	};
+
+	const getStatusText = (status: string) => {
+		switch (status) {
+			case "approved":
+				return "Approved";
+			case "declined":
+				return "Declined";
+			default:
+				return "Under Review";
+		}
+	};
+
 	return <>
 		<Toaster position="bottom-center" />
 
-		<div className="pagePadding space-y-4">
-			<p className="text-4xl font-bold">{text}</p>
+		<div className="pagePadding">
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+				</div>
 
-			<button className="cardBtn" onClick={() => setIsOpen(true)}>
-				<p className="font-bold text-2xl leading-5 mt-1">Create inactivity notice</p>
-				<p className="text-gray-400 font-normal text-base mt-1">Inactivity notices show higher-ups that you are not active.</p>
-			</button>
-			{notices.filter(x => !x.reviewed).length > 0 && (
-				<div>
-					<p className="text-3xl font-bold !mt-8 !mb-4">Notices under review</p>
-					<div className="grid gap-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-						{notices.filter(x => !x.reviewed).map((notice: any) => (
-							<div className="bg-white p-4 rounded-md ring-1 ring-gray-300" key={notice.id}>
-								<h2 className="text-lg font-semibold">
-									{moment(new Date(notice.startTime)).format("MMM Do YYYY")} - {moment(new Date(notice.endTime as Date)).format("MMM Do YYYY")}
-								</h2>
-								<p className="text-gray-500">{notice.reason}</p>
-								<p
-									className={`text-amber-600 font-semibold`}
-								>
-									Under review
-								</p>
+				<div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+					<div className="p-6">
+						<div className="flex items-center justify-between mb-6">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconCalendarTime className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-lg font-medium text-gray-900">Inactivity Notices</h2>
+									<p className="text-sm text-gray-500">Manage your inactivity periods</p>
+								</div>
 							</div>
-						))}
+							<button
+								onClick={() => setIsOpen(true)}
+								className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+							>
+								<IconPlus className="w-4 h-4" />
+								<span className="text-sm font-medium">New Notice</span>
+							</button>
+						</div>
+
+						{notices.length === 0 ? (
+							<div className="text-center py-12">
+								<div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
+									<div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+										<IconClipboardList className="w-8 h-8 text-primary" />
+									</div>
+									<h3 className="text-lg font-medium text-gray-900 mb-1">No Notices</h3>
+									<p className="text-sm text-gray-500 mb-4">You haven't submitted any inactivity notices yet</p>
+									<button
+										onClick={() => setIsOpen(true)}
+										className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+									>
+										<IconPlus className="w-4 h-4" />
+										<span className="text-sm font-medium">Create Notice</span>
+									</button>
+								</div>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{notices.map((notice: any) => (
+									<div key={notice.id} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+										<div className="flex-shrink-0">
+											{getStatusIcon(notice.approved ? "approved" : notice.reviewed ? "declined" : "pending")}
+										</div>
+										<div className="flex-grow">
+											<div className="flex items-center justify-between mb-1">
+												<div className="flex items-center gap-2">
+													<span className={`text-sm font-medium ${
+														notice.approved ? "text-green-600" : 
+														notice.reviewed ? "text-red-600" : 
+														"text-yellow-600"
+													}`}>
+														{getStatusText(notice.approved ? "approved" : notice.reviewed ? "declined" : "pending")}
+													</span>
+													<span className="text-xs text-gray-500">
+														{moment(new Date(notice.startTime)).format("MMM Do")} - {moment(new Date(notice.endTime)).format("MMM Do YYYY")}
+													</span>
+												</div>
+											</div>
+											<p className="text-sm text-gray-600">{notice.reason}</p>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
 				</div>
-			)}
-			<p className="text-3xl font-bold !mt-8 !mb-4">My past notices</p>
-			{notices.length < 1 && (
-				<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-					<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-					<p className="text-center text-xl font-semibold">You have no past notices.</p>
-				</div>
-			)}
-			<div className="grid gap-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-				{notices.filter(x => x.reviewed).map((notice: any) => (
-					<div className="bg-white p-4 rounded-md ring-1 ring-gray-300" key={notice.id}>
-						<h2 className="text-lg font-semibold">
-							{moment(new Date(notice.startTime)).format("MMM Do YYYY")} - {moment(new Date(notice.endTime as Date)).format("MMM Do YYYY")}
-						</h2>
-						<p className="text-gray-500">{notice.reason}</p>
-						<p
-							className={`${notice.approved ? `text-green-600` : `text-red-600`} font-semibold`}
-						>
-							{notice.approved ? `Approved` : `Declined`}
-						</p>
-					</div>
-				))}
 			</div>
 		</div>
 
@@ -153,7 +201,7 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 					leaveFrom="opacity-100"
 					leaveTo="opacity-0"
 				>
-					<div className="fixed inset-0 bg-black bg-opacity-25" />
+					<div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
 				</Transition.Child>
 
 				<div className="fixed inset-0 overflow-y-auto">
@@ -168,41 +216,79 @@ const Notices: pageWithLayout<pageProps> = (props) => {
 							leaveTo="opacity-0 scale-95"
 						>
 							<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<Dialog.Title as="p" className="my-auto text-2xl font-bold">Create notice</Dialog.Title>
+								<Dialog.Title as="h3" className="text-lg font-medium text-gray-900 mb-4">
+									Create Inactivity Notice
+								</Dialog.Title>
 
 								<div className="mt-2">
 									<FormProvider {...form}>
 										<form onSubmit={handleSubmit(onSubmit)}>
 											<div className="grid gap-3 grid-cols-2">
-												<Input label="Start Time" type="date" id="startTime" {...register("startTime", { required: { value: true, message: "This field is required" }, validate: {
-													mm: (value) => {
-														const date = new Date();
-														date.setMilliseconds(0);
-														date.setSeconds(0);
-														date.setMinutes(0);
-														date.setHours(0);
-														date.setDate(parseInt(value.split("-")[2]));
-														date.setMonth(parseInt(value.split("-")[1]) - 1);
-														date.setFullYear(parseInt(value.split("-")[0]));
+												<Input 
+													label="Start Date" 
+													type="date" 
+													id="startTime" 
+													{...register("startTime", { 
+														required: { value: true, message: "This field is required" }, 
+														validate: {
+															future: (value) => {
+																const date = new Date();
+																date.setMilliseconds(0);
+																date.setSeconds(0);
+																date.setMinutes(0);
+																date.setHours(0);
+																date.setDate(parseInt(value.split("-")[2]));
+																date.setMonth(parseInt(value.split("-")[1]) - 1);
+																date.setFullYear(parseInt(value.split("-")[0]));
 
-														if (date.getTime() < new Date().getTime()) return "Please select a date in the future";
-													}
-												} })} />
-												<Input label="End Time" type="date" id="endTime" {...register("endTime", { required: { value: true, message: "This field is required" }, validate: {
-													mn: (value) => {
-														if (new Date(value).getTime() < new Date(form.getValues().startTime).getTime()) return "Please select a date greater than the start date";
-													}
-												}})} />
+																if (date.getTime() < new Date().getTime()) return "Please select a date in the future";
+															}
+														} 
+													})} 
+												/>
+												<Input 
+													label="End Date" 
+													type="date" 
+													id="endTime" 
+													{...register("endTime", { 
+														required: { value: true, message: "This field is required" }, 
+														validate: {
+															afterStart: (value) => {
+																if (new Date(value).getTime() < new Date(form.getValues().startTime).getTime()) return "Please select a date after the start date";
+															}
+														}
+													})} 
+												/>
 											</div>
-											<Input label="Reason" type="text" id="reason" {...register("reason", { required: { value: true, message: "This field is required" } })} />
+											<Input 
+												label="Reason" 
+												type="text" 
+												id="reason" 
+												placeholder="Enter your reason for inactivity..."
+												{...register("reason", { 
+													required: { value: true, message: "This field is required" } 
+												})} 
+											/>
 											<input type="submit" className="hidden" />
 										</form>
 									</FormProvider>
 								</div>
 
-								<div className="mt-4 flex">
-									<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setIsOpen(false)}> Cancel </Button>
-									<Button classoverride="" onPress={handleSubmit(onSubmit)}> Submit </Button>
+								<div className="mt-6 flex gap-3">
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 transition-colors"
+										onClick={() => setIsOpen(false)}
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										className="flex-1 justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+										onClick={handleSubmit(onSubmit)}
+									>
+										Submit
+									</button>
 								</div>
 							</Dialog.Panel>
 						</Transition.Child>

@@ -19,9 +19,10 @@ export async function handler(
 	res: NextApiResponse<Data>
 ) {
 	if (req.method !== 'GET') return res.status(405).json({ success: false, error: 'Method not allowed' })
+	const workspaceId = BigInt(req.query.id as string);
 	const roles = await prisma.role.findMany({
 		where: {
-			workspaceGroupId: parseInt(req.query.id as string)
+			workspaceGroupId: Number(workspaceId)
 		}
 	});
 	

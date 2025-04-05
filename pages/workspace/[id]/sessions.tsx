@@ -2,7 +2,7 @@ import type { pageWithLayout } from "@/layoutTypes";
 import { loginState } from "@/state";
 import Button from "@/components/button";
 import Workspace from "@/layouts/workspace";
-import { IconChevronRight } from "@tabler/icons";
+import { IconChevronRight, IconCalendarEvent, IconClipboardList, IconUsers, IconPlus, IconTrash, IconArrowLeft } from "@tabler/icons";
 import prisma, { Session, user, SessionType } from "@/utils/database";
 import { useRecoilState } from "recoil";
 import { GetServerSideProps } from "next";
@@ -10,10 +10,8 @@ import { useRouter } from "next/router";
 import randomText from "@/utils/randomText";
 import { useState, useMemo, useEffect } from "react";
 import axios from "axios";
-
 import { withPermissionCheckSsr } from "@/utils/permissionsManager";
-
-
+import toast, { Toaster } from 'react-hot-toast';
 
 export const getServerSideProps = withPermissionCheckSsr(async ({ query }) => {
 	const sessions = await prisma.session.findMany({
@@ -44,79 +42,174 @@ type pageProps = {
 		sessionType: SessionType
 	})[]
 }
+
 const Home: pageWithLayout<pageProps> = (props) => {
 	const [login, setLogin] = useRecoilState(loginState);
 	const [sessions, setSessions] = useState(props.sessions);
 	const text = useMemo(() => randomText(login.displayname), []);
-	const [statues, setStatues] = useState(new Map<string, string>)
+	const [statues, setStatues] = useState(new Map<string, string>());
 
 	const router = useRouter();
 
 	const endSession = async (id: string) => {
-		await axios.delete(`/api/workspace/${router.query.id}/sessions/manage/${id}/end`, {});
-		setSessions(sessions.filter((session) => session.id !== id));
+		const axiosPromise = axios.delete(`/api/workspace/${router.query.id}/sessions/manage/${id}/end`, {});
+		
+		toast.promise(axiosPromise, {
+			loading: 'Ending session...',
+			success: () => {
+				setSessions(sessions.filter((session) => session.id !== id));
+				return 'Session ended successfully';
+			},
+			error: 'Failed to end session'
+		});
 	}
 
 	useEffect(() => {
 		const getAllStatues = async () => {
+			const newStatues = new Map<string, string>();
 			for (const session of sessions) {
 				for (const e of session.sessionType.statues.sort((a, b) => {
 					const object = JSON.parse(JSON.stringify(a));
 					const object2 = JSON.parse(JSON.stringify(b));
 					return object2.timeAfter - object.timeAfter;
 				})) {
-					//get how many minutes the session has been going on
 					const minutes = (new Date().getTime() - new Date(session.date).getTime()) / 1000 / 60;
 					const slot = JSON.parse(JSON.stringify(e));
 					if (slot.timeAfter < minutes) {
-						statues.set(session.id, slot.name);
-						return;
+						newStatues.set(session.id, slot.name);
+						break;
 					}
 				}
-				statues.set(session.id, "Open")
+				if (!newStatues.has(session.id)) {
+					newStatues.set(session.id, "Open");
+				}
 			}
+			setStatues(newStatues);
 		}
-		getAllStatues();
 		
-		setInterval(() => {
-			getAllStatues();
-		}, 10000)
-	}, [sessions])
+		getAllStatues();
+		const interval = setInterval(getAllStatues, 10000);
+		
+		return () => clearInterval(interval);
+	}, [sessions]);
 
+	return (
+		<div className="pagePadding">
+			<Toaster position="bottom-center" />
+			<div className="max-w-7xl mx-auto">
+				<div className="flex items-center gap-3 mb-6">
+					<button 
+						onClick={() => router.back()}
+						className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+					>
+						<IconArrowLeft className="w-5 h-5" />
+					</button>
+					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+				</div>
 
-
-	return <div className="pagePadding">
-		<p className="text-4xl font-bold">{text}</p>
-		<p className="text-3xl font-medium mt-5 mb-5">Ongoing sessions</p>
-		{sessions.map(session => {
-			return (
-				<div className="" key={session.id}>
-					<div className="to-primary from-primary/75 bg-gradient-to-t w-full rounded-md overflow-clip text-white">
-						<div className="px-5 py-4 backdrop-blur flex">
-							<div><p className="text-xl font-bold"> {session.sessionType.name} </p>
-								<div className="flex mt-1">
-									<img src={String(session.owner.picture)} className="bg-primary rounded-full w-8 h-8 my-auto" />
-									<p className="font-semibold pl-2 leading-5 my-auto"> {session.owner.username} <br /> {statues.get(session.id)}  </p>
-								</div>
-							</div>
-							<Button classoverride="my-auto ml-auto" onClick={() => endSession(session.id)}> End </Button>
+				{/* Ongoing Sessions Section */}
+				<div className="mb-8">
+					<div className="flex items-center gap-3 mb-4">
+						<div className="bg-primary/10 p-2 rounded-lg">
+							<IconCalendarEvent className="w-5 h-5 text-primary" />
+						</div>
+						<div>
+							<h2 className="text-lg font-medium text-gray-900">Ongoing Sessions</h2>
+							<p className="text-sm text-gray-500">View and manage currently active sessions</p>
 						</div>
 					</div>
+
+					{sessions.length > 0 ? (
+						<div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+							{sessions.map(session => (
+								<div key={session.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+									<div className="p-6">
+										<div className="flex items-start justify-between">
+											<div>
+												<h3 className="text-lg font-medium text-gray-900">{session.sessionType.name}</h3>
+												<div className="flex items-center gap-2 mt-2">
+													<img 
+														src={(session.owner.picture || '/default-avatar.png') as string} 
+														className="w-8 h-8 rounded-full bg-primary border-2 border-white" 
+														alt={session.owner.username}
+													/>
+													<div>
+														<p className="text-sm text-gray-900">{session.owner.username}</p>
+														<p className="text-xs text-gray-500">{statues.get(session.id)}</p>
+													</div>
+												</div>
+											</div>
+											<button
+												onClick={() => endSession(session.id)}
+												className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+											>
+												<IconTrash className="w-5 h-5" />
+											</button>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					) : (
+						<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+							<div className="p-8 text-center">
+								<div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+									<IconCalendarEvent className="w-6 h-6 text-primary" />
+								</div>
+								<h3 className="text-sm font-medium text-gray-900 mb-1">No Active Sessions</h3>
+								<p className="text-sm text-gray-500">There are no sessions currently in progress</p>
+							</div>
+						</div>
+					)}
 				</div>
-			)
-		})}
-		{!sessions.length && (
-			<div className="w-full lg:4/6 xl:5/6 rounded-md h-96 bg-white outline-gray-300 outline outline-[1.4px] flex flex-col p-5">
-				<img className="mx-auto my-auto h-72" alt="fallback image" src={'/conifer-charging-the-battery-with-a-windmill.png'} />
-				<p className="text-center text-xl font-semibold">No sessions are ongoing</p>
+
+				{/* Management Section */}
+				<div className="mb-8">
+					<div className="flex items-center gap-3 mb-4">
+						<div className="bg-primary/10 p-2 rounded-lg">
+							<IconClipboardList className="w-5 h-5 text-primary" />
+						</div>
+						<div>
+							<h2 className="text-lg font-medium text-gray-900">Management</h2>
+							<p className="text-sm text-gray-500">Schedule and manage your sessions</p>
+						</div>
+					</div>
+
+					<div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+						<button 
+							onClick={() => router.push(`/workspace/${router.query.id}/sessions/schedule`)}
+							className="bg-white p-6 rounded-xl shadow-sm hover:bg-gray-50 transition-colors text-left group"
+						>
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconCalendarEvent className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors">View Schedule</h3>
+									<p className="text-sm text-gray-500">View this workspace's session schedule</p>
+								</div>
+							</div>
+						</button>
+
+						<button 
+							onClick={() => router.push(`/workspace/${router.query.id}/sessions/schedules`)}
+							className="bg-white p-6 rounded-xl shadow-sm hover:bg-gray-50 transition-colors text-left group"
+						>
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/10 p-2 rounded-lg">
+									<IconUsers className="w-5 h-5 text-primary" />
+								</div>
+								<div>
+									<h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors">View & Edit Schedules</h3>
+									<p className="text-sm text-gray-500">Edit the session schedules</p>
+								</div>
+							</div>
+						</button>
+					</div>
+				</div>
 			</div>
-		)}
-		<p className="text-3xl font-medium mt-10">Manage</p>
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-			<button onClick={() => router.push(`/workspace/${router.query.id}/sessions/schedule`)} className="cardBtn"> <p className="text-2xl font-semibold leading-5 mt-2 text-left"> View schedule <br /> <span className="text-gray-400 font-normal text-base" > View this workspaces session schedule </span> </p> </button>
-			<button onClick={() => router.push(`/workspace/${router.query.id}/sessions/schedules`)} className="cardBtn"> <p className="text-2xl font-semibold leading-5 mt-2 text-left"> View & Edit schedules <br /> <span className="text-gray-400 font-normal text-base" > Edit the session schedules </span> </p> </button>
 		</div>
-	</div>;
+	);
 };
 
 Home.layout = Workspace;

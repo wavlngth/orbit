@@ -10,14 +10,11 @@ import noblox from "noblox.js";
 import Input from "@/components/input";
 import { v4 as uuidv4 } from 'uuid';
 import prisma from "@/utils/database"
-
 import {
 	createColumnHelper,
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
-	// @ts-ignore
-	onColumnVisibilityChange,
 	getSortedRowModel,
 	SortingState,
 	getPaginationRowModel,
@@ -25,7 +22,6 @@ import {
 } from '@tanstack/react-table'
 import { FormProvider, useForm } from "react-hook-form";
 import Button from "@/components/button";
-import SwitchComponenet from "@/components/switch";
 import { inactivityNotice, Session, user, userBook, wallPost } from "@prisma/client";
 import Checkbox from "@/components/checkbox";
 import toast, { Toaster } from 'react-hot-toast';
@@ -33,6 +29,7 @@ import axios from "axios";
 import { useRouter } from "next/router";
 import moment from "moment";
 import { withPermissionCheckSsr } from "@/utils/permissionsManager";
+import { IconArrowLeft, IconFilter, IconPlus, IconSearch, IconUsers, IconX } from "@tabler/icons";
 
 type User = {
 	info: {
@@ -247,10 +244,8 @@ type pageProps = {
 
 }
 const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
-	const router = useRouter();
-	const { id } = router.query;
 	const [login, setLogin] = useRecoilState(loginState);
-	const columnHelper = createColumnHelper<User>();
+	const router = useRouter();
 	const [sorting, setSorting] = useState<SortingState>([])
 	const [rowSelection, setRowSelection] = useState({});
 	const [isOpen, setIsOpen] = useState(false);
@@ -258,6 +253,18 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 	const [type, setType] = useState("");
 	const [minutes, setMinutes] = useState(0);
 	const [users, setUsers] = useState(usersInGroup);
+	const [isLoading, setIsLoading] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
+	const [searchResults, setSearchResults] = useState([]);
+	const [colFilters, setColFilters] = useState<{
+		id: string
+		column: string
+		filter: string
+		value: string
+	}[]>([]);
+
+	const columnHelper = createColumnHelper<User>();
 
 	const updateUsers = async (query: string) => {
 		
@@ -391,13 +398,6 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 	});
-
-	const [colFilters, setColFilters] = useState<{
-		id: string
-		column: string
-		filter: string
-		value: string
-	}[]>([]);
 
 	const newfilter = () => {
 		setColFilters([...colFilters, { id: uuidv4(), column: 'username', filter: 'equal', value: '' }])
@@ -566,12 +566,12 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 
 			if (type == "add") {
 				promises.push(axios.post(
-					`/api/workspace/${id}/activity/add`,
+					`/api/workspace/${router.query.id}/activity/add`,
 					{ userId: data.info.userId, minutes }
 				));
 			} else {
 				promises.push(axios.post(
-					`/api/workspace/${id}/userbook/${data.info.userId}/new`,
+					`/api/workspace/${router.query.id}/userbook/${data.info.userId}/new`,
 					{ notes: message, type }
 				));
 			}
@@ -594,10 +594,6 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 		setType("");
 	}
 
-	const [searchOpen, setSearchOpen] = useState(false)
-	const [searchQuery, setSearchQuery] = useState('')
-	const [searchResults, setSearchResults] = useState([])
-
 	const updateSearchQuery = async (query: any) => {
 		setSearchQuery(query)
 		setSearchOpen(true)
@@ -606,7 +602,7 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 			 setColFilters([])
 			 return
 			} else { setSearchOpen(true) }
-		const userRequest = await axios.get(`/api/workspace/${id}/staff/search/${query}`)
+		const userRequest = await axios.get(`/api/workspace/${router.query.id}/staff/search/${query}`)
 		const userList = userRequest.data.users
 		setSearchResults(userList)
 	}
@@ -639,249 +635,464 @@ const Views: pageWithLayout<pageProps> = ({ usersInGroup, ranks }) => {
 		}
  	}
 
-	return <>
-		<Toaster position="bottom-center" />
-
-		<Transition appear show={isOpen} as={Fragment}>
-			<Dialog as="div" className="relative z-10" onClose={() => setIsOpen(false)}>
-				<Transition.Child
-					as={Fragment}
-					enter="ease-out duration-300"
-					enterFrom="opacity-0"
-					enterTo="opacity-100"
-					leave="ease-in duration-200"
-					leaveFrom="opacity-100"
-					leaveTo="opacity-0"
-				>
-					<div className="fixed inset-0 bg-black bg-opacity-25" />
-				</Transition.Child>
-
-				<div className="fixed inset-0 overflow y-auto">
-					<div className="flex min-h-full items-center justify-center p-4 text-center">
-						<Transition.Child
-							as={Fragment}
-							enter="ease-out duration-300"
-							enterFrom="opacity-0 scale-95"
-							enterTo="opacity-100 scale-100"
-							leave="ease-in duration-200"
-							leaveFrom="opacity-100 scale-100"
-							leaveTo="opacity-0 scale-95"
-						>
-							<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-								<Dialog.Title as="p" className="my-auto text-2xl font-bold">Mass action: {type} {type == "add" || type == "deduct" ? "minutes" : ""}</Dialog.Title>
-
-								<div className="mt-2">
-									<input
-										className="text-gray-600 dark:text-white rounded-lg p-2 border-2 border-gray-300 dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 focus-visible:ring-blue-500 focus-visible:border-blue-500"
-										type={type == "add" || type == "deduct" ? "number" : "text"}
-										placeholder={type == "add" || type == "deduct" ? "Minutes" : "Message"}
-										value={type == "add" || type == "deduct" ? minutes : message}
-										onChange={(e) => {
-											if (type == "add" || type == "deduct") {
-												setMinutes(parseInt(e.target.value))
-											} else {
-												setMessage(e.target.value)
-											}
-										}}
-									/>
-								</div>
-								<div className="mt-4 flex">
-									<Button classoverride="bg-red-500 hover:bg-red-300 ml-0" onPress={() => setIsOpen(false)}> Cancel </Button>
-									<Button classoverride="" onPress={massAction}> Submit </Button>
-								</div>
-							</Dialog.Panel>
-						</Transition.Child>
+	return (
+		<div className="min-h-screen bg-gray-50">
+			<Toaster position="bottom-center" />
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+				{/* Header */}
+				<div className="flex items-center gap-3 mb-6">
+					<button 
+						onClick={() => router.back()}
+						className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+						aria-label="Go back"
+					>
+						<IconArrowLeft className="w-5 h-5" />
+					</button>
+					<div>
+						<h1 className="text-xl font-medium text-gray-900">Staff Management</h1>
+						<p className="text-sm text-gray-500">View and manage your staff members</p>
 					</div>
 				</div>
-			</Dialog>
-		</Transition>
 
-		<div className="pagePadding">
+				{/* Actions Bar */}
+				<div className="mb-4">
+					<div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+						<div className="flex flex-wrap gap-2">
+							<Popover className="relative">
+								{({ open }) => (
+									<>
+										<Popover.Button
+											className={`inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
+												open ? 'bg-gray-50 ring-2 ring-primary' : ''
+											}`}
+										>
+											<IconFilter className="w-4 h-4 mr-1.5" />
+											Filters
+										</Popover.Button>
 
-			<div className="flex flex-col md:flex-row gap-2">
-				<div className="flex flex-row gap-2">
-				<Popover as="div" className="relative inline-block text-left pb-2">
-						<Popover.Button as={Button} classoverride="ml-0" >
-							Rows
-						</Popover.Button>
-					<Popover.Panel className="absolute left-0 z-20 mt-2 w-80 origin-top-left rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-300 focus-visible:outline-none p-3">
-						<div className="flex flex-col gap-1">
-								{table.getAllLeafColumns().map((column: any) => {
-									if (column.id !== "select" && column.id !== "info") {
-										return (
-											<div key={column.id}>
-												<Checkbox {...{
-													type: 'checkbox',
-													checked: column.getIsVisible(),
-													onChange: column.getToggleVisibilityHandler(),
-												}} />{' '}
-												{getSelectionName(column.id)}
+										<Transition
+											as={Fragment}
+											enter="transition ease-out duration-200"
+											enterFrom="opacity-0 translate-y-1"
+											enterTo="opacity-100 translate-y-0"
+											leave="transition ease-in duration-150"
+											leaveFrom="opacity-100 translate-y-0"
+											leaveTo="opacity-0 translate-y-1"
+										>
+											<Popover.Panel className="absolute left-0 z-10 mt-2 w-72 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-3">
+												<div className="space-y-3">
+													<button
+														onClick={newfilter}
+														className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+													>
+														<IconPlus className="w-4 h-4 mr-1.5" />
+														Add Filter
+													</button>
+
+													{colFilters.map((filter) => (
+														<div key={filter.id} className="p-2 border border-gray-200 rounded-lg">
+															<Filter
+																ranks={ranks}
+																updateFilter={(col, op, value) => updateFilter(filter.id, col, op, value)}
+																deleteFilter={() => removeFilter(filter.id)}
+																data={filter}
+															/>
+														</div>
+													))}
+												</div>
+											</Popover.Panel>
+										</Transition>
+									</>
+								)}
+							</Popover>
+
+							<Popover className="relative">
+								{({ open }) => (
+									<>
+										<Popover.Button
+											className={`inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
+												open ? 'bg-gray-50 ring-2 ring-primary' : ''
+											}`}
+										>
+											<IconUsers className="w-4 h-4 mr-1.5" />
+											Columns
+										</Popover.Button>
+
+										<Transition
+											as={Fragment}
+											enter="transition ease-out duration-200"
+											enterFrom="opacity-0 translate-y-1"
+											enterTo="opacity-100 translate-y-0"
+											leave="transition ease-in duration-150"
+											leaveFrom="opacity-100 translate-y-0"
+											leaveTo="opacity-0 translate-y-1"
+										>
+											<Popover.Panel className="absolute left-0 z-10 mt-2 w-56 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-3">
+												<div className="space-y-2">
+													{table.getAllLeafColumns().map((column: any) => {
+														if (column.id !== "select" && column.id !== "info") {
+															return (
+																<label key={column.id} className="flex items-center space-x-2">
+																	<Checkbox
+																		checked={column.getIsVisible()}
+																		onChange={column.getToggleVisibilityHandler()}
+																	/>
+																	<span className="text-sm text-gray-700">{getSelectionName(column.id)}</span>
+																</label>
+															)
+														}
+													})}
+												</div>
+											</Popover.Panel>
+										</Transition>
+									</>
+								)}
+							</Popover>
+						</div>
+
+						{/* Search */}
+						<div className="relative w-full md:w-56">
+							<div className="relative">
+								<div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+									<IconSearch className="h-4 w-4 text-gray-400" />
+								</div>
+								<input
+									type="text"
+									value={searchQuery}
+									onChange={(e) => updateSearchQuery(e.target.value)}
+									className="block w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+									placeholder="Search username..."
+								/>
+							</div>
+
+							{searchOpen && (
+								<div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg">
+									<div className="py-1">
+										{searchResults.length === 0 && (
+											<div className="px-3 py-1.5 text-sm text-gray-500">
+												No results found
 											</div>
-										)
-									}
-								})}
-							</div>
-					</Popover.Panel>
-				</Popover>
-				<Popover as="div" className="relative inline-block text-left pb-2">
-					
-					<Popover.Button as={Button} classoverride="ml-0" >
-						Filters
-					</Popover.Button>
-					
-					<Popover.Panel className="absolute left-0 z-20 mt-2 w-80 origin-top-left rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-300 focus-visible:outline-none p-3">
-						<Button onClick={newfilter}> Add filter </Button>
-						{colFilters.map((filter) => (
-							<div className="p-3 outline outline-gray-300 rounded-md mt-4 outline-1" key={filter.id}> <Filter ranks={ranks} updateFilter={(col, op, value) => updateFilter(filter.id, col, op, value)} deleteFilter={() => removeFilter(filter.id)} data={filter} /> </div>
-						))}
-					</Popover.Panel>
-				</Popover>
+										)}
+										{searchResults.map((u: any) => (
+											<button
+												key={u.username}
+												onClick={() => updateSearchFilter(u.username)}
+												className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center space-x-2"
+											>
+												<img
+													src={u.thumbnail}
+													alt={u.username}
+													className="w-6 h-6 rounded-full bg-primary"
+												/>
+												<span className="text-sm font-medium text-gray-900">{u.username}</span>
+											</button>
+										))}
+									</div>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Mass Actions */}
+					{table.getSelectedRowModel().flatRows.length > 0 && (
+						<div className="mt-3 flex flex-wrap gap-2">
+							<button
+								onClick={() => { setType("promotion"); setIsOpen(true) }}
+								className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+							>
+								Mass promote {table.getSelectedRowModel().flatRows.length} users
+							</button>
+							<button
+								onClick={() => { setType("warning"); setIsOpen(true) }}
+								className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+							>
+								Mass warn {table.getSelectedRowModel().flatRows.length} users
+							</button>
+							<button
+								onClick={() => { setType("suspension"); setIsOpen(true) }}
+								className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+							>
+								Mass suspend {table.getSelectedRowModel().flatRows.length} users
+							</button>
+							<button
+								onClick={() => { setType("fire"); setIsOpen(true) }}
+								className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+							>
+								Mass fire {table.getSelectedRowModel().flatRows.length} users
+							</button>
+							<button
+								onClick={() => { setType("add"); setIsOpen(true) }}
+								className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+							>
+								Add minutes to {table.getSelectedRowModel().flatRows.length} users
+							</button>
+						</div>
+					)}
 				</div>
-			
-				{table.getSelectedRowModel().flatRows.length > 0 && (
-							<div className="flex flex-row flex-wrap gap-2 mb-2">
-								<Button classoverride="bg-green-500 hover:bg-green-500/50 ml-0" onPress={() => { setType("promotion"); setIsOpen(true) }}>Mass promote {table.getSelectedRowModel().flatRows.length} users</Button>
-								<Button classoverride="bg-orange-500 hover:bg-orange-500/50 ml-0" onPress={() => { setType("warning"); setIsOpen(true) }}>Mass warn {table.getSelectedRowModel().flatRows.length} users</Button>
-								<Button classoverride="bg-gray-800 hover:bg-gray-800/50 ml-0" onPress={() => { setType("suspension"); setIsOpen(true) }}>Mass suspend {table.getSelectedRowModel().flatRows.length} users</Button>
-								<Button classoverride="bg-red-500 hover:bg-red-500/50 ml-0" onPress={() => { setType("fire"); setIsOpen(true) }}>Mass fire {table.getSelectedRowModel().flatRows.length} users</Button>
-								<Button classoverride="bg-emerald-500 hover:bg-emerald-500/50 ml-0" onPress={() => { setType("add"); setIsOpen(true) }}>Add minutes to {table.getSelectedRowModel().flatRows.length} users</Button>
+
+				{/* Table */}
+				<div className="bg-white rounded-lg shadow overflow-hidden">
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-200">
+							<thead className="bg-gray-50">
+								<tr>
+									{table.getHeaderGroups().map((headerGroup) => (
+										headerGroup.headers.map((header) => (
+											<th
+												key={header.id}
+												scope="col"
+												className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+												onClick={header.column.getToggleSortingHandler()}
+											>
+												{header.isPlaceholder ? null : (
+													<div className="flex items-center space-x-1">
+														<span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
+													</div>
+												)}
+											</th>
+										))
+									))}
+								</tr>
+							</thead>
+							<tbody className="bg-white divide-y divide-gray-200">
+								{table.getRowModel().rows.map((row) => (
+									<tr
+										key={row.id}
+										className="hover:bg-gray-50 transition-colors"
+									>
+										{row.getVisibleCells().map((cell) => (
+											<td
+												key={cell.id}
+												className="px-4 py-2 whitespace-nowrap text-sm text-gray-500"
+											>
+												{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											</td>
+										))}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+
+					{/* Pagination */}
+					<div className="bg-white px-3 py-2 flex items-center justify-between border-t border-gray-200 sm:px-4">
+						<div className="flex-1 flex justify-center">
+							<div className="flex gap-1">
+								<button
+									onClick={() => table.previousPage()}
+									disabled={!table.getCanPreviousPage()}
+									className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+								>
+									Previous
+								</button>
+								<span className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 rounded-md">
+									Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+								</span>
+								<button
+									onClick={() => table.nextPage()}
+									disabled={!table.getCanNextPage()}
+									className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+								>
+									Next
+								</button>
 							</div>
-						)}
-				{table.getSelectedRowModel().flatRows.length == 0 && (
-					<div className="relative inline-block w-full pb-2">
-					<input type="text" value={searchQuery} onChange={(e:any) => { updateSearchQuery(e.target.value) }} className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full h-full" placeholder="Search Username" />
-					<div className={`absolute bg-white border border-gray-300 p-3 mt-2 rounded-lg w-full flex flex-col gap-1 ${searchOpen ? "" : "hidden"}`}>
-						{searchResults.length < 1 && <p className="text-gray-400 text-center">No results found</p>} 
-						{searchResults.map((u: any) => {
-							return (<button key={u.username} onClick={() => { updateSearchFilter(u.username) }} className="flex flex-row gap-3 flex-wrap rounded-xl bg-white hover:bg-gray-100 items-center p-2">
-								<img src={u.thumbnail} className="w-10 h-10 rounded-full bg-primary" />
-								<p className="font-semibold">{u.username}</p>
-							</button>)
-						})}
+						</div>
 					</div>
 				</div>
-				)}
-				
 			</div>
-			<div className="max-w-screen overflow-x-auto bg-white w-full rounded-xl border-1 p-3 border border-separate border-gray-300">
-				<table className="min-w-full">
-					<thead className="text-left text-slate-400 text-sm">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<tr className="font-medium" key={headerGroup.id}>
-								{headerGroup.headers.map((column) => (
-									<th className="font-normal px-6 py-2 hover:text-slate-200 cursor-pointer text-left" onClick={column.column.getToggleSortingHandler()} key={column.id}>{column.isPlaceholder
-										? null
-										: flexRender(
-											column.column.columnDef.header,
-											column.getContext()
-										)}
-									</th>
-								))}
 
-							</tr>
-						))}
-					</thead>
-					<tbody className="">
-						{table.getRowModel().rows.map(row => (
-							<tr key={row.id}>
-								{row.getVisibleCells().map(cell => (
-									<td key={cell.id} className="px-6 py-2">
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</td>
-								))}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
-			<div className="flex flex-row justify-center mt-3">
-				<Button classoverride="px-4 py-2 !mx-2 !ml-0 bg-primary disabled:bg-primary/50" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>{"<"}</Button>
-				<div className="px-4 py-2 bg-primary text-white w-fit rounded-xl">
-					{table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-				</div>
-				<Button classoverride="px-4 py-2 !mx-2 bg-primary disabled:bg-primary/50" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>{">"}</Button>
-			</div>
+			{/* Mass Action Dialog */}
+			<Transition appear show={isOpen} as={Fragment}>
+				<Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
+					<Transition.Child
+						as={Fragment}
+						enter="ease-out duration-300"
+						enterFrom="opacity-0"
+						enterTo="opacity-100"
+						leave="ease-in duration-200"
+						leaveFrom="opacity-100"
+						leaveTo="opacity-0"
+					>
+						<div className="fixed inset-0 bg-black bg-opacity-25" />
+					</Transition.Child>
+
+					<div className="fixed inset-0 overflow-y-auto">
+						<div className="flex min-h-full items-center justify-center p-4 text-center">
+							<Transition.Child
+								as={Fragment}
+								enter="ease-out duration-300"
+								enterFrom="opacity-0 scale-95"
+								enterTo="opacity-100 scale-100"
+								leave="ease-in duration-200"
+								leaveFrom="opacity-100 scale-100"
+								leaveTo="opacity-0 scale-95"
+							>
+								<Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-5 text-left align-middle shadow-xl transition-all">
+									<Dialog.Title as="div" className="flex items-center justify-between mb-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Mass {type} {type === "add" ? "minutes" : ""}
+										</h3>
+										<button
+											onClick={() => setIsOpen(false)}
+											className="text-gray-400 hover:text-gray-500"
+										>
+											<IconX className="w-5 h-5" />
+										</button>
+									</Dialog.Title>
+
+									<FormProvider {...useForm({
+										defaultValues: {
+											value: type === "add" ? minutes.toString() : message
+										}
+									})}>
+										<div className="mt-3">
+											<Input
+												type={type === "add" ? "number" : "text"}
+												placeholder={type === "add" ? "Minutes" : "Message"}
+												value={type === "add" ? minutes.toString() : message}
+												name="value"
+												id="value"
+												onBlur={async () => true}
+												onChange={async (e) => {
+													if (type === "add") {
+														setMinutes(parseInt(e.target.value) || 0);
+													} else {
+														setMessage(e.target.value);
+													}
+													return true;
+												}}
+											/>
+										</div>
+									</FormProvider>
+
+									<div className="mt-5 flex justify-end gap-2">
+										<button
+											type="button"
+											className="inline-flex justify-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+											onClick={() => setIsOpen(false)}
+										>
+											Cancel
+										</button>
+										<button
+											type="button"
+											className="inline-flex justify-center px-3 py-1.5 text-sm font-medium text-white bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+											onClick={massAction}
+										>
+											Confirm
+										</button>
+									</div>
+								</Dialog.Panel>
+							</Transition.Child>
+						</div>
+					</div>
+				</Dialog>
+			</Transition>
 		</div>
-	</>;
+	);
 };
 
 const Filter: React.FC<{
-	data: any
-	updateFilter: (column: string, op: string, value: string) => void
-	deleteFilter: () => void
+	data: {
+		column: string;
+		filter: string;
+		value: string;
+	};
+	updateFilter: (column: string, op: string, value: string) => void;
+	deleteFilter: () => void;
 	ranks: {
-		id: number,
-		name: string,
-		rank: number,
-	}[]
-}> = (
-	{
-		updateFilter,
-		deleteFilter,
-		data,
-		ranks
-	}
-) => {
-		const methods = useForm<{
-			col: string
-			op: string
-			value: string,
-		}>({
-			defaultValues: {
-				col: data.column,
-				op: data.filter,
-				value: data.value
-			}
+		id: number;
+		name: string;
+		rank: number;
+	}[];
+}> = ({ updateFilter, deleteFilter, data, ranks }) => {
+	const methods = useForm<{
+		col: string;
+		op: string;
+		value: string;
+	}>({
+		defaultValues: {
+			col: data.column,
+			op: data.filter,
+			value: data.value
+		}
+	});
+
+	const { register, handleSubmit, getValues } = methods;
+
+	useEffect(() => {
+		const subscription = methods.watch(() => {
+			updateFilter(methods.getValues().col, methods.getValues().op, methods.getValues().value);
 		});
-		const { register, handleSubmit, getValues } = methods;
-		useEffect(() => {
-			const subscription = methods.watch((value) => {
-				updateFilter(methods.getValues().col, methods.getValues().op, methods.getValues().value);
-			});
-			return () => subscription.unsubscribe();
-		}, [methods.watch]);
+		return () => subscription.unsubscribe();
+	}, [methods.watch]);
 
+	return (
+		<FormProvider {...methods}>
+			<div className="space-y-4">
+				<button
+					onClick={deleteFilter}
+					className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+				>
+					Delete Filter
+				</button>
 
+				<div className="space-y-2">
+					<label className="block text-sm font-medium text-gray-700">
+						Column
+					</label>
+					<select
+						{...register('col')}
+						className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+					>
+						{Object.keys(filters).map((filter) => (
+							<option value={filter} key={filter}>{filter}</option>
+						))}
+					</select>
+				</div>
 
-		return (
-			<FormProvider {...methods}>
-				<div> <Button onClick={deleteFilter}> Delete </Button> </div>
-				<label className="text-gray-500 text-sm dark:text-gray-200">
-					Col
-				</label>
-				<select {...register('col')} className={"text-gray-600 dark:text-white rounded-lg p-2 border-2 border-gray-300  dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 focus-visible:ring-tovybg focus-visible:border-tovybg"}>
-					{Object.keys(filters).map((filter) => (
-						<option value={filter} key={filter}>{filter}</option>
-					))}
-				</select>
-				<label className="text-gray-500 text-sm dark:text-gray-200">
-					OP
-				</label>
-				<select  {...register('op')} className={"text-gray-600 dark:text-white rounded-lg p-2 border-2 border-gray-300  dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 focus-visible:ring-tovybg focus-visible:border-tovybg"}>
-					{filters[methods.getValues().col].map((filter) => (
-						<option value={filter} key={filter}>{filterNames[filter]}</option>
-					))}
+				<div className="space-y-2">
+					<label className="block text-sm font-medium text-gray-700">
+						Operation
+					</label>
+					<select
+						{...register('op')}
+						className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+					>
+						{filters[methods.getValues().col].map((filter) => (
+							<option value={filter} key={filter}>{filterNames[filter]}</option>
+						))}
+					</select>
+				</div>
 
-				</select>
-				{getValues('col').valueOf() !== 'rank' && <Input {...register('value')} label="Value" />}
-
-				{getValues('col') === 'rank' && (
-
-					<>
-						<label className="text-gray-500 text-sm dark:text-gray-200">
+				{getValues('col') !== 'rank' && (
+					<div className="space-y-2">
+						<label className="block text-sm font-medium text-gray-700">
 							Value
 						</label>
-						<select  {...register('value')} className={"text-gray-600 dark:text-white rounded-lg p-2 border-2 border-gray-300  dark:border-gray-500 w-full bg-gray-50 focus-visible:outline-none dark:bg-gray-700 focus-visible:ring-tovybg focus-visible:border-tovybg"}>
+						<Input {...register('value')} />
+					</div>
+				)}
+
+				{getValues('col') === 'rank' && (
+					<div className="space-y-2">
+						<label className="block text-sm font-medium text-gray-700">
+							Value
+						</label>
+						<select
+							{...register('value')}
+							className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+						>
 							{ranks.map((rank) => (
 								<option value={rank.rank} key={rank.id}>{rank.name}</option>
 							))}
 						</select>
-					</>)}
+					</div>
+				)}
+			</div>
+		</FormProvider>
+	);
+};
 
-			</FormProvider>
-		)
-	}
+Views.layout = workspace;
 
-Views.layout = workspace
-
-export default Views
+export default Views;
