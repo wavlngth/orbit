@@ -131,7 +131,7 @@ const Home: pageWithLayout<pageProps> = (props) => {
 													<img 
 														src={(session.owner.picture || '/default-avatar.png') as string} 
 														className="w-8 h-8 rounded-full bg-primary border-2 border-white" 
-														alt={session.owner.username}
+														alt={session.owner.username || 'User'}
 													/>
 													<div>
 														<p className="text-sm text-gray-900">{session.owner.username}</p>

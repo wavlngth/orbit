@@ -125,9 +125,9 @@ const Allies: pageWithLayout<pageProps> = (props) => {
 		setSelectedRoles(roles);
 	}
 
-	const [reps, setReps] = useState([])
+	const [reps, setReps] = useState<string[]>([])
 
-	const handleCheckboxChange = (event: any) => {
+	const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const { value, checked } = event.target
 		if(checked) {
 			setReps([...reps, value])
