@@ -25,7 +25,7 @@ const Login: NextPage = ({ }) => {
 	}, []);
 
 	async function createAccount() {
-		let request
+		let request: { data: { success: boolean; user: any } } | undefined
 		try {
 			request = await axios.post('/api/setupworkspace', {
 				groupid: methods.getValues("groupid"),
@@ -33,6 +33,13 @@ const Login: NextPage = ({ }) => {
 				password: signupform.getValues("password"),
 				color: selectedColor,
 			})
+			if (request?.data.success) {
+				setLogin(prev => ({
+					...prev,
+					...request?.data.user,
+					isOwner: true
+				}))
+			}
 		}
 		catch (e: any) {
 			if (e?.response?.status === 404) {
@@ -70,7 +77,7 @@ const Login: NextPage = ({ }) => {
 	return (
 		<div className="flex bg-infobg h-screen bg-no-repeat bg-cover bg-center">
 			<p className="text-md -mt-1 text-white absolute top-4 left-4 xs:hidden md:text-6xl font-extrabold">
-				Welcome <br /> to <span className="text-orbit "> Orbit </span>
+				Welcome <br /> to <span className="text-pink-100 "> Orbit </span>
 			</p>
 			<Slider activeSlide={selectedSlide}>
 				<div>

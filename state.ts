@@ -15,8 +15,8 @@ const loginState = atom({
 		displayname: '',
 		thumbnail: '',
 		canMakeWorkspace: false,
-		workspaces: [] as workspaceinfo[]
-		
+		workspaces: [] as workspaceinfo[],
+		isOwner: false
 	},
 });
 

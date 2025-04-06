@@ -13,7 +13,7 @@ import { getRobloxUsername, getRobloxThumbnail, getRobloxDisplayName, getRobloxU
 type Data = {
 	success: boolean
 	error?: string
-	user?: User
+	user?: User & { isOwner: boolean }
 }
 
 type requestData = {
@@ -90,11 +90,12 @@ export async function handler(
 	req.session.userid = userid
 	await req.session?.save()
 
-	const user: User = {
+	const user: User & { isOwner: boolean } = {
 		userId: req.session.userid,
 		username: await getUsername(req.session.userid),
 		displayname: await getDisplayName(req.session.userid),
-		thumbnail: await getThumbnail(req.session.userid)
+		thumbnail: await getThumbnail(req.session.userid),
+		isOwner: true
 	}
 
 	await setRegistry((req.headers.host as string))
