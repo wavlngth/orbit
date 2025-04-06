@@ -25,7 +25,7 @@ export async function handler(
 		}
 		setConfig('activity', activityconfig, parseInt(req.query.id as string));
 	};
-]
+
 
 	let xml_string = fs.readFileSync(path.join('Tovy2-activity-alpha.rbxmx'), "utf8");
 	res.setHeader('Content-Disposition', 'attachment; filename=Tovy2-activity-alpha.rbxmx');
