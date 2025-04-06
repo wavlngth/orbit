@@ -87,7 +87,7 @@ const SECTIONS = {
 		name: 'General',
 		icon: IconHome,
 		description: 'Basic workspace settings and preferences',
-		components: Object.entries(All).filter(([key]) => key === 'Color' || key === 'home').map(([key, Component]) => ({
+		components: Object.entries(All).filter(([key]) => key === 'Color' || key === 'home' || key === 'Activity').map(([key, Component]) => ({
 			key,
 			component: Component,
 			title: Component.title
