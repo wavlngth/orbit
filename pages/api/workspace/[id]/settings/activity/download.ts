@@ -25,12 +25,13 @@ export async function handler(
 		}
 		setConfig('activity', activityconfig, parseInt(req.query.id as string));
 	};
-
+]
 
 	let xml_string = fs.readFileSync(path.join('Tovy2-activity-alpha.rbxmx'), "utf8");
 	res.setHeader('Content-Disposition', 'attachment; filename=Tovy2-activity-alpha.rbxmx');
 	const protocol = req.headers['x-forwarded-proto'] || req.headers.referer?.split('://')[0] || 'http';
-	let xx = xml_string.replace('<apikey>', activityconfig.key).replace('<url>', `${protocol}://${req.headers.host}`);
+	let currentUrl = new URL(`${protocol}://${req.headers.host}${req.url}`);
+	let xx = xml_string.replace('<apikey>', activityconfig.key).replace('<url>', currentUrl.origin);
 
 
 	//send file and set content type
