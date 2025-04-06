@@ -8,12 +8,14 @@
     <img height="40px" src=".github/logo.png"></img>
     <h1>Orbit by Team Planetary</h1>
   </div>
+    <img src="https://img.shields.io/badge/version-v1.00beta1-purple"></img>
   <ul>
     <li><a href="#about">About</a></li>
     <li><a href="#why-consider">Why consider</a></li>
     <li><a href="#quicklinks">Quicklinks</a></li>
     <li><a href="#license">License</a></li>
   </ul>
+
   <h2>About</h2>
   <p>
     Orbit is a modern, improved, and maintained fork of the open source staff management platform, Tovy. It allows Roblox groups to manage their group members in a more intuitive and powerful way, while still being simple to use. Planetary aims to continue the original Tovy mission and maintain, improve, and introduce new features to Orbit. So far, we've fixed critical bugs that essentially bricked Tovy, improved the UI, and introduced image support to the wall. We also created our own custom runtime and cloud hosting service to bring Orbit to the masses for free, in just a few clicks.
