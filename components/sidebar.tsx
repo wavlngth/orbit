@@ -26,9 +26,9 @@ const Sidebar: NextPage<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 		{ name: "Wall", href: "/workspace/[id]/wall", icon: IconWall },
 		{ name: "Activity", href: "/workspace/[id]/activity", icon: IconClipboardList, accessible: workspace.yourPermission.includes('view_entire_groups_activity') },
 		{ name: "Allies", href: "/workspace/[id]/allies", icon: IconBuildingCommunity },
-		{ name: "Sessions", href: "/workspace/[id]/sessions", icon: IconSpeakerphone, accessible: workspace.settings.sessionsEnabled },
+		{ name: "Sessions", href: "/workspace/[id]/sessions", icon: IconSpeakerphone, accessible: workspace.yourPermission.includes('manage_sessions') },
 		{ name: "Staff", href: "/workspace/[id]/views", icon: IconUsers, accessible: workspace.yourPermission.includes('view_members') },
-		{ name: "Docs", href: "/workspace/[id]/docs", icon: IconFileText, accessible: workspace.settings.guidesEnabled },
+		{ name: "Docs", href: "/workspace/[id]/docs", icon: IconFileText, accessible: workspace.yourPermission.includes('manage_docs') },
 		{ name: "Settings", href: "/workspace/[id]/settings", icon: IconSettings, accessible: workspace.yourPermission.includes('admin') }
 	];
 
@@ -39,7 +39,15 @@ const Sidebar: NextPage<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
 	const logout = async () => {
 		await axios.post("/api/auth/logout");
-		setLogin({ userId: 1, username: '', displayname: '', canMakeWorkspace: false, thumbnail: '', workspaces: [] });
+		setLogin({
+			userId: 1,
+			username: '',
+			displayname: '',
+			canMakeWorkspace: false,
+			thumbnail: '',
+			workspaces: [],
+			isOwner: false
+		});
 		router.push('/login');
 	};
 

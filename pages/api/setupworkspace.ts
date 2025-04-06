@@ -48,15 +48,53 @@ export async function handler(
 			groupId: parseInt(req.body.groupid)
 		}
 	})
-	await prisma.config.create({
-		data: {
-			key: "customization",
-			workspaceGroupId: parseInt(req.body.groupid),
-			value: {
-				color: req.body.color
+
+	// Initialize all required configs
+	await Promise.all([
+		prisma.config.create({
+			data: {
+				key: "customization",
+				workspaceGroupId: parseInt(req.body.groupid),
+				value: {
+					color: req.body.color
+				}
 			}
-		}
-	});
+		}),
+		prisma.config.create({
+			data: {
+				key: "theme",
+				workspaceGroupId: parseInt(req.body.groupid),
+				value: req.body.color
+			}
+		}),
+		prisma.config.create({
+			data: {
+				key: "guides",
+				workspaceGroupId: parseInt(req.body.groupid),
+				value: {
+					enabled: true
+				}
+			}
+		}),
+		prisma.config.create({
+			data: {
+				key: "sessions",
+				workspaceGroupId: parseInt(req.body.groupid),
+				value: {
+					enabled: true
+				}
+			}
+		}),
+		prisma.config.create({
+			data: {
+				key: "home",
+				workspaceGroupId: parseInt(req.body.groupid),
+				value: {
+					widgets: []
+				}
+			}
+		})
+	]);
 
 	const role = await prisma.role.create({
 		data: {
@@ -65,7 +103,15 @@ export async function handler(
 			isOwnerRole: true,
 			permissions: [
 				'admin',
-				'view_staff_config'
+				'view_staff_config',
+				'manage_sessions',
+				'manage_activity',
+				'post_on_wall',
+				'view_wall',
+				'view_members',
+				'manage_members',
+				'manage_docs',
+				'view_entire_groups_activity'
 			]
 		}
 	});

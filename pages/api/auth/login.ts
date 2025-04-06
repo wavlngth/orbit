@@ -16,6 +16,7 @@ type User = {
 	username: string
 	displayname: string
 	thumbnail: string
+	isOwner: boolean
 }
 
 type DatabaseUser = {
@@ -25,6 +26,7 @@ type DatabaseUser = {
 	roles: {
 		workspaceGroupId: number;
 	}[];
+	isOwner: boolean;
 }
 
 type DatabaseResponse = DatabaseUser | { error: string };
@@ -65,6 +67,7 @@ export async function handler(
 			select: {
 				info: true,
 				roles: true,
+				isOwner: true
 			}
 		}).catch(error => {
 			console.error('Database error:', error);
@@ -105,7 +108,8 @@ export async function handler(
 			userId: req.session.userid,
 			username: await getUsername(req.session.userid),
 			displayname: await getDisplayName(req.session.userid),
-			thumbnail: await getThumbnail(req.session.userid)
+			thumbnail: await getThumbnail(req.session.userid),
+			isOwner: user.isOwner || false
 		}
 
 		let roles: any[] = [];

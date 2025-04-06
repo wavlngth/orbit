@@ -7,7 +7,18 @@ export type workspaceinfo = {
 				groupThumbnail: string;
 				groupName: string
 }
-const loginState = atom({
+
+export type LoginState = {
+	userId: number;
+	username: string;
+	displayname: string;
+	thumbnail: string;
+	canMakeWorkspace: boolean;
+	workspaces: workspaceinfo[];
+	isOwner: boolean;
+}
+
+const loginState = atom<LoginState>({
 	key: "loginState",
 	default: {
 		userId: 1,

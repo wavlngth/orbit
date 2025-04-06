@@ -20,6 +20,7 @@ const Topbar: NextPage = () => {
 			canMakeWorkspace: false,
 			thumbnail: '',
 			workspaces: [],
+			isOwner: false
 		});
 		router.push('/login');
 	}
