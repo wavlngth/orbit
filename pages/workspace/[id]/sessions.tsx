@@ -103,7 +103,7 @@ const Home: pageWithLayout<pageProps> = (props) => {
 					</button>
 					<div>
 						<h1 className="text-2xl font-medium text-gray-900 dark:text-white">Sessions</h1>
-						<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Plan, schedule, and manage sessions for your staff members.</p>
+						<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Plan, schedule, and manage sessions for your staff members</p>
 					</div>
 				</div>
 
