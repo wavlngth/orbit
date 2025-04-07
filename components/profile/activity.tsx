@@ -5,7 +5,7 @@ import { FC } from '@/types/settingsComponent'
 import { Chart, ChartData, ScatterDataPoint } from "chart.js"
 import { Line } from "react-chartjs-2";
 import type { ActivitySession, Quota, inactivityNotice } from "@prisma/client";
-import Tooltip from "../tooltip";
+import Tooltip from "@/components/tooltip";
 import moment from "moment";
 import { Dialog, Transition } from "@headlessui/react";
 import Button from "../button";
@@ -292,7 +292,7 @@ const Activity: FC<Props> = ({ timeSpent, timesPlayed, data, quotas, sessionsAtt
 													<h3 className="text-sm font-medium text-gray-900">{quota.name}</h3>
 													<p className="text-xs text-gray-500">{getQuotaProgress(quota)}</p>
 												</div>
-												<Tooltip orientation="top" tooltipText={getQuotaProgress(quota)} isWorkspace>
+												<Tooltip orientation="top" tooltipText={getQuotaProgress(quota)}>
 													<div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
 														<div 
 															className="h-full bg-primary transition-all" 
