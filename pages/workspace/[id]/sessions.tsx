@@ -98,23 +98,22 @@ const Home: pageWithLayout<pageProps> = (props) => {
 			<Toaster position="bottom-center" />
 			<div className="max-w-7xl mx-auto">
 				<div className="flex items-center gap-3 mb-6">
-					<button 
-						onClick={() => router.back()}
-						className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-					>
+					<button onClick={() => router.back()} className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
 						<IconArrowLeft className="w-5 h-5" />
 					</button>
-					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+					<div>
+						<h1 className="text-2xl font-medium text-gray-900 dark:text-white">Sessions</h1>
+						<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Plan, schedule, and manage sessions for your staff members</p>
+					</div>
 				</div>
 
-				{/* Ongoing Sessions Section */}
 				<div className="mb-8">
 					<div className="flex items-center gap-3 mb-4">
 						<div className="bg-primary/10 p-2 rounded-lg">
 							<IconCalendarEvent className="w-5 h-5 text-primary" />
 						</div>
 						<div>
-							<h2 className="text-lg font-medium text-gray-900">Ongoing Sessions</h2>
+							<h2 className="text-lg font-medium text-gray-900 dark:text-white">Ongoing Sessions</h2>
 							<p className="text-sm text-gray-500">View and manage currently active sessions</p>
 						</div>
 					</div>
@@ -163,14 +162,13 @@ const Home: pageWithLayout<pageProps> = (props) => {
 					)}
 				</div>
 
-				{/* Management Section */}
 				<div className="mb-8">
 					<div className="flex items-center gap-3 mb-4">
 						<div className="bg-primary/10 p-2 rounded-lg">
 							<IconClipboardList className="w-5 h-5 text-primary" />
 						</div>
 						<div>
-							<h2 className="text-lg font-medium text-gray-900">Management</h2>
+							<h2 className="text-lg font-medium text-gray-900 dark:text-white">Management</h2>
 							<p className="text-sm text-gray-500">Schedule and manage your sessions</p>
 						</div>
 					</div>
