@@ -252,7 +252,9 @@ const Home: pageWithLayout<{
 					>
 						<IconArrowLeft className="w-5 h-5" />
 					</button>
-					<h1 className="text-2xl font-medium text-gray-900">{text}</h1>
+					<div>
+						<h1 className="text-2xl font-medium text-gray-900 dark:text-white">Sessions</h1>
+					</div>
 				</div>
 
 				<div className="mb-8">
