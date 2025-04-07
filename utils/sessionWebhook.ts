@@ -22,7 +22,7 @@ export const sendWebhook = async (session: (Session & {
 				`A %TYPE% is now being hosted by %HOST%! Join the game below to attend this session.`
 			)
 		)
-		.setFooter({ text: `Tovy Sessions` });
+		.setFooter({ text: `Orbit Sessions` });
 
 	const actionRow = new ActionRowBuilder<ButtonBuilder>()
 
@@ -80,7 +80,7 @@ export const deleteWebhook = async (session: (Session & {
 				`The %TYPE% session hosted by %HOST% has ended.`
 			)
 		)
-		.setFooter({ text: `Tovy Sessions` });
+		.setFooter({ text: `Orbit Sessions` });
 	
 	await webhook.editMessage(session.messageId, { embeds: [messageEmbed], components: [], content: "" })
 	
