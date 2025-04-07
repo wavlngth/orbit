@@ -24,8 +24,8 @@ const Activity: pageWithLayout = () => {
 	const router = useRouter();
 	const { id } = router.query;
 
-	const [login] = useRecoilState(loginState);
-	const [workspace] = useRecoilState(workspacestate);
+	const [login, setLogin] = useRecoilState(loginState);
+	const [workspace, setWorkspace] = useRecoilState(workspacestate);
 	const text = useMemo(() => randomText(login.displayname), []);
 	const [activeUsers, setActiveUsers] = useState([]);
 	const [inactiveUsers, setInactiveUsers] = useState([]);
