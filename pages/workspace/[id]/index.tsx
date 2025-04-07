@@ -48,17 +48,13 @@ const Home: pageWithLayout = () => {
 	return (
 		<div className="pagePadding">
 			<div className="max-w-7xl mx-auto">
-				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-2xl font-medium text-gray-900 dark:text-white">
-						Welcome back, {login.displayname}
-					</h1>
+					<h1 className="text-3xl font-medium text-gray-900 dark:text-white mb-6"><strong>{text}</strong></h1>
 					<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
 						Here's what's happening in your workspace
 					</p>
 				</div>
 
-				{/* Widgets Grid */}
 				{workspace.settings.widgets.length > 0 ? (
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						{workspace.settings.widgets.map((widget) => {
@@ -67,11 +63,7 @@ const Home: pageWithLayout = () => {
 							const Widget = widgetConfig.component;
 							const Icon = widgetConfig.icon;
 							return (
-								<div 
-									key={widget} 
-									className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden"
-								>
-									{/* Widget Header */}
+								<div key={widget} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
 									<div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
 										<div className="flex items-center gap-3">
 											<div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -88,7 +80,6 @@ const Home: pageWithLayout = () => {
 										</div>
 									</div>
 
-									{/* Widget Content */}
 									<div className="p-6">
 										<Widget />
 									</div>
